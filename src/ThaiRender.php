@@ -211,7 +211,7 @@ class ThaiRender
             return $resultHTML;
         }));
 
-        $translator = new Symfony\Component\Translation\Translator($this::$Config->getUserLng().'_'.mb_strtoupper($this::$Config->getUserLng()));
+        $translator = new \Symfony\Component\Translation\Translator($this::$Config->getUserLng().'_'.mb_strtoupper($this::$Config->getUserLng()));
         $translator->addLoader('po', new PoFileLoader());
         $finder = new Finder();
 
