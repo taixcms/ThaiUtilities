@@ -1,7 +1,7 @@
 <?php
 namespace ThaiUtilities;
 
-use Exception;
+use \Exception;
 
 /**
  * Class ThaiGettingClass

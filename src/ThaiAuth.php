@@ -1,6 +1,6 @@
 <?php
 namespace ThaiUtilities;
-use Exception;
+use \Exception;
 
 class ThaiAuth
 {

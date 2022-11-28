@@ -1,6 +1,6 @@
 <?php
 namespace ThaiUtilities;
-use Exception;
+use \Exception;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Translation\Loader\PoFileLoader;
 use Twig\Environment;

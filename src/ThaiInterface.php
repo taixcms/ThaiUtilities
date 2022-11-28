@@ -1,7 +1,7 @@
 <?php
 namespace ThaiUtilities;
-use Closure;
-use Exception;
+use \Closure;
+use \Exception;
 
 /**
  * Class ThaiInterface
