@@ -35,7 +35,7 @@ class ThaiGettingClass
                     return true;
                 }
             }
-            throw new Exception($class_name . ' not found');
+            throw new \Exception($class_name . ' not found');
         });
         return $this;
     }

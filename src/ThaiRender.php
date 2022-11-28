@@ -384,13 +384,13 @@ msgstr ""
             if(!empty($this::$Content[$file])){
                 return (string)$this::$Content[$file];
             }else{
-                throw new Exception("No content");
+                throw new \Exception("No content");
             }
         }else{
             if(!empty($this::$Content[$file])) {
                 return (string)$this::$Content[$this::$fileTwig];
             }else{
-                throw new Exception("No content");
+                throw new \Exception("No content");
             }
         }
     }
