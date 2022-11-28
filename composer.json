@@ -1,0 +1,32 @@
+{
+  "name":"php/utilities",
+  "description": "Useful Utilities",
+  "authors": [
+	{
+	  "name": "Pavel Gubin",
+	  "email": "admin@taix.ru"
+	}
+  ],
+  "require": {
+    "twig/twig": "^3.3",
+    "symfony/cache": "*",
+    "ext-json": "*",
+    "textalk/websocket": "^1.5",
+    "assetic/framework": "^3.0",
+    "wikimedia/minify": "^2.3",
+    "scssphp/scssphp": "^1.10",
+    "leafo/lessphp": "^0.5.0",
+    "ptachoire/cssembed": "^1.0",
+    "symfony/translation": "^5.4",
+    "google/cloud-translate": "^1.12",
+    "google/cloud": "^0.189.0"
+
+  },
+  "autoload": {
+	"classmap": ["src"]
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true
+  }
+}
