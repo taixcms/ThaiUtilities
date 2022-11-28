@@ -1,11 +1,7 @@
 <?php
 namespace ThaiUtilities;
 use \Exception;
-use \Symfony\Component\Finder\Finder;
-use \Symfony\Component\Translation\Loader\PoFileLoader;
-use \Twig\Environment;
-use \Twig\Loader\FilesystemLoader;
-use \Twig\TwigFilter;
+
 
 /**
  * Class ThaiRender
@@ -29,8 +25,8 @@ class ThaiRender
      */
     public function __construct( $ConfigCMS )
     {
-       $this::$Config = $ConfigCMS;
-       return $this;
+        $this::$Config = $ConfigCMS;
+        return $this;
     }
 
     /**
@@ -45,19 +41,19 @@ class ThaiRender
 
     /**
      * @param null $ClassName
-     * @return Environment
+     * @return \Twig\Environment
      */
-    public function getTwig($ClassName = null): Environment
+    public function getTwig($ClassName = null): \Twig\Environment
     {
         if($this::$ClassName && $ClassName === null){
             $ClassName = $this::$ClassName;
         }
 
-        $this::$Twig = new Environment(new FilesystemLoader($this::$Config->getTwigDir()), ['cache' => $this::$Config->isTwigCacheEnabled()]);
-        $this::$Twig->addFilter(new TwigFilter('json', function ($array) {
+        $this::$Twig = new \Twig\Environment(new \Twig\Loader\FilesystemLoader($this::$Config->getTwigDir()), ['cache' => $this::$Config->isTwigCacheEnabled()]);
+        $this::$Twig->addFilter(new \Twig\TwigFilter('json', function ($array) {
             return json_encode($array ?: [],JSON_UNESCAPED_UNICODE);
         }));
-        $this::$Twig->addFilter(new TwigFilter('assetic', function ($string) {
+        $this::$Twig->addFilter(new \Twig\TwigFilter('assetic', function ($string) {
 
             $dirAsset =  'projects'.'/'.$_SERVER['HTTP_HOST'].'/asset';
             $pattern  = "/((@import\s+[\"'`]([\w:?=@&\/#._;-]+)[\"'`];)|";
@@ -76,6 +72,7 @@ class ThaiRender
                     'htmlName'=>''
                 ];
                 $resultHTML = '';
+
                 foreach ($matches[8] as $link){
                     if (mb_strpos($link, '/') !== false && mb_strpos($link, '/') === 0) {
                         $link= mb_substr( $link, 1, strlen($link) ) ;
@@ -102,19 +99,21 @@ class ThaiRender
                 //<script type="text/html" src="/projects/{{ ExtraData.domain }}/twig/components/calendar.html"></script>
 
                 if((!file_exists($dirAsset.'/cache/'.md5($AssetFiles['htmlName']).'.html')  || !$this::$Config->isTwigCacheEnabled()) && $AssetFiles['htmlName'] != ''  ){
+
                     foreach ($matches[8] as $link){
                         if (mb_strpos($link, '/') !== false && mb_strpos($link, '/') === 0) {
                             $link= mb_substr( $link, 1, strlen($link) ) ;
                         }
                         if(file_exists($link)){
                             if(pathinfo($link, PATHINFO_EXTENSION) === 'twig'){
-                                $HandlebarsFilter = new Assetic\Filter\CallablesFilter();
-                                $AssetFiles['html'][] = new Assetic\Asset\FileAsset($link,array($HandlebarsFilter));
+                                $HandlebarsFilter = new \Assetic\Filter\CallablesFilter();
+                                $AssetFiles['html'][] = new \Assetic\Asset\FileAsset($link,array($HandlebarsFilter));
                             }
                         }
                     }
+
                     if(count($AssetFiles['html'])>=1){
-                        $js = new Assetic\Asset\AssetCollection($AssetFiles['html']);
+                        $js = new \Assetic\Asset\AssetCollection($AssetFiles['html']);
                         if (!file_exists($dirAsset)) {
                             mkdir($dirAsset, 0777, true);
                         }
@@ -134,13 +133,13 @@ class ThaiRender
                         }
                         if(file_exists($link)){
                             if(pathinfo($link, PATHINFO_EXTENSION) === 'js'){
-                                $jsMinifier = new Assetic\Filter\JavaScriptMinifierFilter();
-                                $AssetFiles['js'][] = new Assetic\Asset\FileAsset($link,array($jsMinifier));
+                                $jsMinifier = new \Assetic\Filter\JavaScriptMinifierFilter();
+                                $AssetFiles['js'][] = new \Assetic\Asset\FileAsset($link,array($jsMinifier));
                             }
                         }
                     }
                     if(count($AssetFiles['js'])>=1){
-                        $js = new Assetic\Asset\AssetCollection($AssetFiles['js']);
+                        $js = new \Assetic\Asset\AssetCollection($AssetFiles['js']);
                         if (!file_exists($dirAsset)) {
                             mkdir($dirAsset, 0777, true);
                         }
@@ -159,29 +158,29 @@ class ThaiRender
                         }
                         if(file_exists($link)){
                             if(pathinfo($link, PATHINFO_EXTENSION) === 'css'){
-                                $CSSMinFilter = new Assetic\Filter\CSSMinFilter();
+                                $CSSMinFilter = new \Assetic\Filter\CSSMinFilter();
                                 //$StylesheetMinifyFilter = new Assetic\Filter\StylesheetMinifyFilter();
-                                $PhpCssEmbedFilter = new Assetic\Filter\PhpCssEmbedFilter();
-                                $AssetFiles['css'][] = new Assetic\Asset\FileAsset($link,array($CSSMinFilter,$PhpCssEmbedFilter));
+                                $PhpCssEmbedFilter = new \Assetic\Filter\PhpCssEmbedFilter();
+                                $AssetFiles['css'][] = new \Assetic\Asset\FileAsset($link,array($CSSMinFilter,$PhpCssEmbedFilter));
                             }
                             if(pathinfo($link, PATHINFO_EXTENSION) === 'scss'){
-                                $ScssphpFilter = new Assetic\Filter\ScssphpFilter();
+                                $ScssphpFilter = new \Assetic\Filter\ScssphpFilter();
                                 //$StylesheetMinifyFilter = new Assetic\Filter\StylesheetMinifyFilter();
-                                $PhpCssEmbedFilter = new Assetic\Filter\PhpCssEmbedFilter();
-                                $CSSMinFilter = new Assetic\Filter\CSSMinFilter();
-                                $AssetFiles['css'][] = new Assetic\Asset\FileAsset($link,array($ScssphpFilter,$PhpCssEmbedFilter,$CSSMinFilter));
+                                $PhpCssEmbedFilter = new \Assetic\Filter\PhpCssEmbedFilter();
+                                $CSSMinFilter = new \Assetic\Filter\CSSMinFilter();
+                                $AssetFiles['css'][] = new \Assetic\Asset\FileAsset($link,array($ScssphpFilter,$PhpCssEmbedFilter,$CSSMinFilter));
                             }
                             if(pathinfo($link, PATHINFO_EXTENSION) === 'less'){
-                                $LessphpFilter = new Assetic\Filter\LessphpFilter();
+                                $LessphpFilter = new \Assetic\Filter\LessphpFilter();
                                 //$StylesheetMinifyFilter = new Assetic\Filter\StylesheetMinifyFilter();
-                                $PhpCssEmbedFilter = new Assetic\Filter\PhpCssEmbedFilter();
-                                $CSSMinFilter = new Assetic\Filter\CSSMinFilter();
-                                $AssetFiles['css'][] = new Assetic\Asset\FileAsset($link,array($LessphpFilter,$PhpCssEmbedFilter,$CSSMinFilter));
+                                $PhpCssEmbedFilter = new \Assetic\Filter\PhpCssEmbedFilter();
+                                $CSSMinFilter = new \Assetic\Filter\CSSMinFilter();
+                                $AssetFiles['css'][] = new \Assetic\Asset\FileAsset($link,array($LessphpFilter,$PhpCssEmbedFilter,$CSSMinFilter));
                             }
                         }
                     }
                     if(count($AssetFiles['css'])>=1){
-                        $css = new Assetic\Asset\AssetCollection($AssetFiles['css']);
+                        $css = new \Assetic\Asset\AssetCollection($AssetFiles['css']);
                         if (!file_exists($dirAsset)) {
                             mkdir($dirAsset, 0777, true);
                         }
@@ -212,8 +211,8 @@ class ThaiRender
         }));
 
         $translator = new \Symfony\Component\Translation\Translator($this::$Config->getUserLng().'_'.mb_strtoupper($this::$Config->getUserLng()));
-        $translator->addLoader('po', new PoFileLoader());
-        $finder = new Finder();
+        $translator->addLoader('po', new \Symfony\Component\Translation\Loader\PoFileLoader());
+        $finder = new \Symfony\Component\Finder\Finder();
 
         if(file_exists($_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.'projects'.DIRECTORY_SEPARATOR.$_SERVER['HTTP_HOST'].DIRECTORY_SEPARATOR.'translate')){
             $poFiles = $finder->files()->in($_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.'projects'.DIRECTORY_SEPARATOR.$_SERVER['HTTP_HOST'].DIRECTORY_SEPARATOR.'translate'.DIRECTORY_SEPARATOR.'*')->name('GeneralUI.po')->name($this::$ClassName.'.po');
@@ -230,7 +229,7 @@ class ThaiRender
         }
         $thisSelf = $this;
         $ConfigCMS = $this::$Config;
-        $this::$Twig->addFilter(new TwigFilter('trans', function ($string)use($translator,$ClassName,$thisSelf,$ConfigCMS) {
+        $this::$Twig->addFilter(new \Twig\TwigFilter('trans', function ($string)use($translator,$ClassName,$thisSelf,$ConfigCMS) {
 
             $file = $_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.'projects'.DIRECTORY_SEPARATOR.$_SERVER['HTTP_HOST'].DIRECTORY_SEPARATOR.'translate'.DIRECTORY_SEPARATOR.$ConfigCMS->getUserLng().'_'.mb_strtoupper($ConfigCMS->getUserLng()).DIRECTORY_SEPARATOR.$ClassName.'.po';
             if(!file_exists($file)){

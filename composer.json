@@ -8,7 +8,7 @@
 	}
   ],
   "require": {
-    "twig/twig": "@stable",
+    "twig/twig": "^3.3",
     "symfony/cache": "*",
     "ext-json": "*",
     "textalk/websocket": "^1.5",
