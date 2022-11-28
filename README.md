@@ -1,5 +1,5 @@
 ## Useful Utility
-taix/utility is a набор классов programmed in PHP and using SQL with PDO<br>
+taix/utility is a class set programmed in PHP and using SQL with PDO<br>
 Version 1.1.1 is the new big rewrite
 
 ### Basic functionalities
