@@ -1921,7 +1921,7 @@ abstract class ThaiInterface {
         try {
          $result = $this->Connect->query($sqlText);
          $this->insert_id = $this->Connect->insert_id;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return null;
         }
         $rows = null;
@@ -3440,7 +3440,7 @@ abstract class ThaiInterface {
             if($fieldsWhere != 'id'){
                 return $fieldsWhere;
             }else{
-                throw new Exception('getFieldsWhere method does not support id field');
+                throw new \Exception('getFieldsWhere method does not support id field');
             }
         }else{
             return 'userid';
