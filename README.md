@@ -1,6 +1,6 @@
 ## Useful Utility
 taix/utility is a набор классов programmed in PHP and using SQL with PDO<br>
-Version 1.0.9 is the new big rewrite
+Version 1.1.1 is the new big rewrite
 
 ### Basic functionalities
 1. ThaiAuth
