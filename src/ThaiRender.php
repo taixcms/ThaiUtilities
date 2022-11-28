@@ -45,10 +45,9 @@ class ThaiRender
      */
     public function getTwig($ClassName = null): \Twig\Environment
     {
-        if($this::$ClassName && $ClassName === null){
+        if($ClassName === null){
             $ClassName = $this::$ClassName;
         }
-
         $this::$Twig = new \Twig\Environment(new \Twig\Loader\FilesystemLoader($this::$Config->getTwigDir()), ['cache' => $this::$Config->isTwigCacheEnabled()]);
         $this::$Twig->addFilter(new \Twig\TwigFilter('json', function ($array) {
             return json_encode($array ?: [],JSON_UNESCAPED_UNICODE);
@@ -414,21 +413,12 @@ msgstr ""
      */
     public function render(string $file = ''): ThaiRender
     {
+        $this::$ClassName = explode('.',$file)[0];
         if(!$this::$Twig){
             $this->getTwig();
         }
-
-        if($file === ''){
-            if(file_exists($_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.'twig'.DIRECTORY_SEPARATOR.$this::$ClassName.'.twig') || file_exists($_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.'projects'.DIRECTORY_SEPARATOR.$_SERVER['HTTP_HOST'].DIRECTORY_SEPARATOR.'twig'.DIRECTORY_SEPARATOR.$this::$ClassName.'.twig')){
-                $this->setContent($this::$ClassName.'.twig',$this::$Twig->render($this::$ClassName.'.twig', $this->getDTO()));
-                $this::$fileTwig = $this::$ClassName.'.twig';
-            }else{
-                die('ERROR file '.$this::$ClassName.'.twig not found');
-            }
-        }else{
             $this::$fileTwig = $file;
             $this->setContent($file,$this::$Twig->render($file, $this->getDTO()));
-        }
         return  $this;
     }
 
