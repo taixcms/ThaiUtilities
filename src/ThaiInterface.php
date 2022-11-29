@@ -1570,6 +1570,7 @@ abstract class ThaiInterface
                             'UploadProgress' => null,
                             'NewName' => $uRow['file_name'],
                             'date_upload' => $uRows222[0]['date_upload'],
+                            'file_size' => $uRows222[0]['file_size'],
                             'ErrorMessage' => null,
                             'preview' => $uRows222[0]['preview'],
                             'Selected' => true,
