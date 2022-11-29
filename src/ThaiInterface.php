@@ -2711,7 +2711,7 @@ abstract class ThaiInterface
 
         foreach ($this->getRequest() as $valueData) {
             $data = $this->callbackBeforeSave((array)$valueData);
-            if (!empty($data['id'])) {
+            if (isset($data['id'])) {
                 $id = (int)$data['id'];
                 if ($this->Connect) {
                     if ($id <= 0) {
