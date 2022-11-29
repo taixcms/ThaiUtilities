@@ -2127,12 +2127,12 @@ abstract class ThaiInterface
     public function IsLogged(): ThaiInterface
     {
         if (!$this->isLogged && (int)$this->userid <= 0) {
-            if (function_exists('memcache_close')) {
-                memcache_close();
-            }
-            if ($this->Connect) {
-                $this->Connect->close();
-            }
+//            if (function_exists('memcache_close')) {
+//                memcache_close();
+//            }
+//            if ($this->Connect) {
+//                $this->Connect->close();
+//            }
             $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https" : "http";
             header('Location: ' . $protocol . '://' . $this->AuthHost . '/auth?returl=' . $this->PageSimpleURL);
             exit;
