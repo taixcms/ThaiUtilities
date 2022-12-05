@@ -53,6 +53,7 @@ class ThaiGettingClass
             ->setLang($this::$Config->getUserLng())
             ->setNameDataBase($this::$Config->getDbName())
             ->setUserid($this::$Config->getUserid())
+            ->setIsAdmin($this::$Config->isIsadmin())
             ->setProjectID($this::$Config->getProjectID())
             ->setSelectCurr($this::$Config->getAccountCurrency())
             ->setIsLogged(false)

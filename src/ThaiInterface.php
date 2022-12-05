@@ -62,6 +62,25 @@ abstract class ThaiInterface
     public $Filter;
     public $fieldsId;
     public $isLogged;
+    public $isAdmin = false;
+
+    /**
+     * @return bool
+     */
+    public function isAdmin(): bool
+    {
+        return $this->isAdmin;
+    }
+
+    /**
+     * @param bool $isAdmin
+     * @return $this
+     */
+    public function setIsAdmin(bool $isAdmin): ThaiInterface
+    {
+        $this->isAdmin = $isAdmin;
+        return $this;
+    }
 
     /**
      * @param  $Db
@@ -110,6 +129,7 @@ abstract class ThaiInterface
         $this->setLimit(10)->getPermission()->setCurrentPage(1);
 
     }
+
 
     /**
      * @param bool $Filter
@@ -462,9 +482,6 @@ abstract class ThaiInterface
             if (count($routeString) >= 2) {
                 $ID = (int)explode('/', $_REQUEST['route'])[1];
             }
-        }
-        if ((int)$ID <= 0) {
-            include_once($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'engine' . DIRECTORY_SEPARATOR . "404.class.php");
         }
         return $ID;
     }
@@ -3278,6 +3295,45 @@ abstract class ThaiInterface
 
         return $this;
     }
+    /**
+     * @return array
+     */
+    public function getDTO(): array
+    {
+        $this->setExtraData('Lang', $this->Lang);
+         return [
+            'dataTmp' => $this->Data,
+            'Lang' => $this->Lang,
+            'user_langTmp' => $this->Lang,
+            'DefaultFieldType' => $this->DefaultFieldType,
+            'Condition' => $this->Condition,
+            'extraDataTmp' => $this->ExtraData,
+            'crossAjaxData' => $this->CrossAjaxData,
+            'AuthHost' => $this->AuthHost,
+            'PageSimpleURL' => $this->PageSimpleURL,
+            'SkeletonTmp' => $this->Skeleton,
+            'sortOrder' => $this->sortOrder,
+            'UserId' => $this->userid,
+            'testUrl'=>'',
+            'RequestTmp' => $this->Request,
+            'LimitTmp' => $this->getLimit(),
+            'projectID' => $this->getProjectId(),
+            'OffsetTmp' => $this->getOffset(),
+            'CountSelectTmp' => $this->getCountSelectResult(),
+            'CountPageTmp' => $this->getCountPage(),
+            'NumberPageTmp' => $this->getNumberPage(),
+            'CurrentPageTmp' => $this->getCurrentPage(),
+            'UserIdTmp' => $this->getUserId(),
+            'UserId' => $this->getUserId(),
+            'Debug' => $this->getDebug(),
+            'ClassAction' => $this->ClassAction,
+            'routeParam' => $this->getRouteParam(),
+            'AccessDenied'=>$this->translated('Access denied'),
+            'requiredMesg'=>$this->translated('This field is required'),
+            'AutoSearchTmp' => (count($this->getAutoSearch()) === 0) ? [$this->TableName => 0] : $this->getAutoSearch(),
+            'checkSum' => ($this->getCheckSum()) ? [$this->TableName => 'CheckSum-Not-Info'] : $this->getCheckSum()
+        ];
+    }
 
     /**
      * @return array
@@ -3305,8 +3361,10 @@ abstract class ThaiInterface
             'CountPage' => $this->getCountPage(),
             'NumberPage' => $this->getNumberPage(),
             'CurrentPage' => $this->getCurrentPage(),
+            'UserId' => $this->getUserId(),
             'Debug' => $this->getDebug(),
             'ClassAction' => $this->ClassAction,
+            'routeParam' => $this->getRouteParam(),
             'AutoSearch' => (count($this->getAutoSearch()) === 0) ? [$this->TableName => 0] : $this->getAutoSearch(),
             'checkSum' => ($this->getCheckSum()) ? [$this->TableName => 'CheckSum-Not-Info'] : $this->getCheckSum()
         ];
