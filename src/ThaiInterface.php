@@ -69,7 +69,7 @@ abstract class ThaiInterface
      */
     public function getSqlType(): string
     {
-        return $this->getSqlType();
+        return $this->sqlType;
     }
 
     /**
