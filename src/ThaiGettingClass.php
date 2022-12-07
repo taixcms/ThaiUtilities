@@ -42,8 +42,10 @@ class ThaiGettingClass
 
     public function getClass($className)
     {
-        $bb = new $className($this::$Config->getDb());
-        $bb->setRequest($_REQUEST)
+        $config = $this::$Config;
+        $ActionClass = new $className($this::$Config->getDb());
+        $ActionClass->setNameDataBase($this::$Config->getDbName());
+        $ActionClass->setRequest($_REQUEST)
             ->setsetmemcache_set(function ($memcache_obj, $memcachekey, $urows, $p1 = 0, $p2 = 60) {
                 return false;
             })
@@ -59,10 +61,10 @@ class ThaiGettingClass
             ->setIsLogged(false)
             ->setAuthHost($_SERVER['HTTP_HOST'])
             ->setPageSimpleURL($_SERVER['REQUEST_URI'])
-            ->setLangConverter(function ($text) {
-                return $text;
+            ->setLangConverter(function ($text, $from_lng, $to_lng, $Reformat) use($config) {
+                return $config->translate($text, $from_lng, $to_lng, $Reformat);
             })
             ->setExtraData('domain',$_SERVER['HTTP_HOST']);
-        return $bb;
+        return $ActionClass;
     }
 }

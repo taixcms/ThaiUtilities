@@ -235,7 +235,9 @@ class ThaiRender
                 self::$translator[$this::$ClassName] = $translator;
                 $newText = $translator->trans($string);
             }
+
             if(!file_exists($file) && $this::$Config->isTransCreateROfile()){
+
                 if (!file_exists($_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.'projects'.DIRECTORY_SEPARATOR.$_SERVER['HTTP_HOST'].DIRECTORY_SEPARATOR.$this::$Config->getTransDir())) {
                     mkdir($_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.'projects'.DIRECTORY_SEPARATOR.$_SERVER['HTTP_HOST'].DIRECTORY_SEPARATOR.$this::$Config->getTransDir(), 0777, true);
                 }

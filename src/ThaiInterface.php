@@ -69,7 +69,7 @@ abstract class ThaiInterface
      */
     public function getSqlType(): string
     {
-        return $this->sqlType;
+        return $this->getSqlType();
     }
 
     /**
@@ -81,7 +81,7 @@ abstract class ThaiInterface
         $this->sqlType = $sqlType;
         return $this;
     }
-
+    
     /**
      * @return bool
      */
@@ -202,13 +202,13 @@ abstract class ThaiInterface
                 }
             }
 
-            $sqlText = "SELECT " . $this->sqlType . " FROM " . $this->getTableNameWhere() . " " . $this->parseSqlPermission($this->getUser($this->getUserId())) . " " . $dopSqlText;
+            $sqlText = "SELECT " . $this->getSqlType() . " FROM " . $this->getTableNameWhere() . " " . $this->parseSqlPermission($this->getUser($this->getUserId())) . " " . $dopSqlText;
             //var_dump($sqlText);
-            $this->setSqlCount(str_replace($this->sqlType, 'COUNT(*)', $sqlText));
+            $this->setSqlCount(str_replace($this->getSqlType(), 'COUNT(*)', $sqlText));
             $arr = $this->ReformatRows(
                 $this->query(
                     str_replace(
-                        $this->sqlType,
+                        $this->getSqlType(),
                         $this->getTableNameWhere() . '.*',
                         $this->ReformatSql($sqlText)
                     )
@@ -1638,12 +1638,12 @@ abstract class ThaiInterface
         }
 
         if ($this->Connect) {
-            $sqlText = "SELECT " . $this->sqlType . " FROM " . $this->getTableNameWhere() . " where " . $this->getFieldsWhere() . " = '" . $this->getValueWhere() . "' AND userid = '" . $this->getUserId() . "' " . $dopSqlText;
-            $this->setSqlCount(str_replace($this->sqlType, 'COUNT(*)', $sqlText));
+            $sqlText = "SELECT " . $this->getSqlType() . " FROM " . $this->getTableNameWhere() . " where " . $this->getFieldsWhere() . " = '" . $this->getValueWhere() . "' AND userid = '" . $this->getUserId() . "' " . $dopSqlText;
+            $this->setSqlCount(str_replace($this->getSqlType(), 'COUNT(*)', $sqlText));
             $arr = $this->ReformatRows(
                 $this->query(
                     str_replace(
-                        $this->sqlType,
+                        $this->getSqlType(),
                         $this->getTableNameWhere() . '.*',
                         $this->ReformatSql($sqlText)
                     )
@@ -1757,12 +1757,12 @@ abstract class ThaiInterface
         }
 
         if ($this->Connect) {
-            $sqlText = "SELECT " . $this->sqlType . " FROM " . $this->getTableNameWhere() . " " . $this->parseSqlPermission($this->getUser($this->getUserId())) . " and " . $this->getTableNameWhere() . "." . $this->getFieldsWhere() . " = '" . $this->getValueWhere() . "'" . $dopSqlText;
-            $this->setSqlCount(str_replace($this->sqlType, 'COUNT(*)', $sqlText));
+            $sqlText = "SELECT " . $this->getSqlType() . " FROM " . $this->getTableNameWhere() . " " . $this->parseSqlPermission($this->getUser($this->getUserId())) . " and " . $this->getTableNameWhere() . "." . $this->getFieldsWhere() . " = '" . $this->getValueWhere() . "'" . $dopSqlText;
+            $this->setSqlCount(str_replace($this->getSqlType(), 'COUNT(*)', $sqlText));
             $arr = $this->ReformatRows(
                 $this->query(
                     str_replace(
-                        $this->sqlType,
+                        $this->getSqlType(),
                         $this->getTableNameWhere() . '.*',
                         $this->ReformatSql($sqlText)
                     )
@@ -1803,12 +1803,12 @@ abstract class ThaiInterface
             }
         }
         if ($this->Connect) {
-            $sqlText = "SELECT " . $this->sqlType . " FROM " . $this->getTableNameWhere() . " where " . $this->getFieldsWhere() . " = '" . $this->getValueWhere() . "'" . $dopSqlText;
-            $this->setSqlCount(str_replace($this->sqlType, 'COUNT(*)', $sqlText));
+            $sqlText = "SELECT " . $this->getSqlType() . " FROM " . $this->getTableNameWhere() . " where " . $this->getFieldsWhere() . " = '" . $this->getValueWhere() . "'" . $dopSqlText;
+            $this->setSqlCount(str_replace($this->getSqlType(), 'COUNT(*)', $sqlText));
             $arr = $this->ReformatRows(
                 $this->query(
                     str_replace(
-                        $this->sqlType,
+                        $this->getSqlType(),
                         $this->getTableNameWhere() . '.*',
                         $this->ReformatSql($sqlText)
                     )
@@ -1831,11 +1831,11 @@ abstract class ThaiInterface
     {
         if ($this->Connect) {
             $sqlText = "SELECT * FROM " . $this->getTableNameWhere() . " where " . $FieldName . " = '" . $FieldValue . "'";
-            $this->setSqlCount(str_replace($this->sqlType, 'COUNT(*)', $sqlText));
+            $this->setSqlCount(str_replace($this->getSqlType(), 'COUNT(*)', $sqlText));
             $arr = $this->ReformatRows(
                 $this->query(
                     str_replace(
-                        $this->sqlType,
+                        $this->getSqlType(),
                         $this->getTableNameWhere() . '.*',
                         $this->ReformatSql($sqlText)
                     )
@@ -1857,11 +1857,11 @@ abstract class ThaiInterface
     {
         if ($this->Connect) {
             $sqlText = "SELECT * FROM " . $this->getTableNameWhere() . " where " . $FieldName . " = '" . $FieldValue . "'";
-            $this->setSqlCount(str_replace($this->sqlType, 'COUNT(*)', $sqlText));
+            $this->setSqlCount(str_replace($this->getSqlType(), 'COUNT(*)', $sqlText));
             $arr = $this->ReformatRows(
                 $this->query(
                     str_replace(
-                        $this->sqlType,
+                        $this->getSqlType(),
                         $this->getTableNameWhere() . '.*',
                         $this->ReformatSql($sqlText)
                     )
@@ -1896,11 +1896,11 @@ abstract class ThaiInterface
     {
         if ($this->Connect) {
             $sqlText = "SELECT * FROM " . $this->getTableNameWhere() . " where " . $this->getFieldsWhere() . " in(" . implode(',', $idList) . ")";
-            $this->setSqlCount(str_replace($this->sqlType, 'COUNT(*)', $sqlText));
+            $this->setSqlCount(str_replace($this->getSqlType(), 'COUNT(*)', $sqlText));
             $arr = $this->ReformatRows(
                 $this->query(
                     str_replace(
-                        $this->sqlType,
+                        $this->getSqlType(),
                         $this->getTableNameWhere() . '.*',
                         $this->ReformatSql($sqlText)
                     )
@@ -1931,11 +1931,11 @@ abstract class ThaiInterface
         }
         if ($this->Connect) {
             $sqlText = "SELECT * FROM " . $this->getTableNameWhere() . " where id ='" . $id . "'";
-            $this->setSqlCount(str_replace($this->sqlType, 'COUNT(*)', $sqlText));
+            $this->setSqlCount(str_replace($this->getSqlType(), 'COUNT(*)', $sqlText));
             $arr = $this->ReformatRows(
                 $this->query(
                     str_replace(
-                        $this->sqlType,
+                        $this->getSqlType(),
                         $this->getTableNameWhere() . '.*',
                         $this->ReformatSql($sqlText)
                     )
@@ -2053,11 +2053,11 @@ abstract class ThaiInterface
         }
         if ($this->Connect) {
             $sqlText = "SELECT * FROM " . $this->getTableNameWhere() . " where " . $this->getFieldsWhere() . " = '" . $UserID . "'";
-            $this->setSqlCount(str_replace($this->sqlType, 'COUNT(*)', $sqlText));
+            $this->setSqlCount(str_replace($this->getSqlType(), 'COUNT(*)', $sqlText));
             $arr = $this->ReformatRows(
                 $this->query(
                     str_replace(
-                        $this->sqlType,
+                        $this->getSqlType(),
                         $this->getTableNameWhere() . '.*',
                         $this->ReformatSql($sqlText)
                     )
@@ -2095,12 +2095,12 @@ abstract class ThaiInterface
     public function getItemsByUserID(int $UserID, string $key = NULL): ThaiInterface
     {
         if ($this->Connect) {
-            $sqlText = "SELECT " . $this->sqlType . " FROM " . $this->getTableNameWhere() . " where " . $this->getFieldsWhere() . " = '" . $UserID . "'";
-            $this->setSqlCount(str_replace($this->sqlType, 'COUNT(*)', $sqlText));
+            $sqlText = "SELECT " . $this->getSqlType() . " FROM " . $this->getTableNameWhere() . " where " . $this->getFieldsWhere() . " = '" . $UserID . "'";
+            $this->setSqlCount(str_replace($this->getSqlType(), 'COUNT(*)', $sqlText));
             $arr = $this->ReformatRows(
                 $this->query(
                     str_replace(
-                        $this->sqlType,
+                        $this->getSqlType(),
                         $this->getTableNameWhere() . '.*',
                         $this->ReformatSql($sqlText)
                     )
@@ -2120,12 +2120,12 @@ abstract class ThaiInterface
     public function getItemsByUserIDs(array $idList, string $key = NULL): ThaiInterface
     {
         if ($this->Connect) {
-            $sqlText = "SELECT " . $this->sqlType . " FROM " . $this->getTableNameWhere() . " where '" . $this->getFieldsWhere() . "' in(" . implode(',', $idList) . ")";
-            $this->setSqlCount(str_replace($this->sqlType, 'COUNT(*)', $sqlText));
+            $sqlText = "SELECT " . $this->getSqlType() . " FROM " . $this->getTableNameWhere() . " where '" . $this->getFieldsWhere() . "' in(" . implode(',', $idList) . ")";
+            $this->setSqlCount(str_replace($this->getSqlType(), 'COUNT(*)', $sqlText));
             $arr = $this->ReformatRows(
                 $this->query(
                     str_replace(
-                        $this->sqlType,
+                        $this->getSqlType(),
                         $this->getTableNameWhere() . '.*',
                         $this->ReformatSql($sqlText)
                     )
@@ -3716,12 +3716,12 @@ abstract class ThaiInterface
             }
         }
         if ($this->Connect) {
-            $sqlText = "SELECT " . $this->sqlType . " FROM " . $this->getTableNameWhere() . " " . $dopSqlText;
-            $this->setSqlCount(str_replace($this->sqlType, 'COUNT(*)', $sqlText));
+            $sqlText = "SELECT " . $this->getSqlType() . " FROM " . $this->getTableNameWhere() . " " . $dopSqlText;
+            $this->setSqlCount(str_replace($this->getSqlType(), 'COUNT(*)', $sqlText));
             $arr = $this->ReformatRows(
                 $this->query(
                     str_replace(
-                        $this->sqlType,
+                        $this->getSqlType(),
                         $this->getTableNameWhere() . '.*',
                         $this->ReformatSql($sqlText)
                     )
