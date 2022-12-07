@@ -65,6 +65,24 @@ abstract class ThaiInterface
     public $isAdmin = false;
 
     /**
+     * @return string
+     */
+    public function getSqlType(): string
+    {
+        return $this->sqlType;
+    }
+
+    /**
+     * @param string $sqlType
+     * @return $this
+     */
+    public function setSqlType(string $sqlType): ThaiInterface
+    {
+        $this->sqlType = $sqlType;
+        return $this;
+    }
+
+    /**
      * @return bool
      */
     public function isAdmin(): bool
