@@ -63,6 +63,34 @@ abstract class ThaiInterface
     public $fieldsId;
     public $isLogged;
     public $isAdmin = false;
+    private static $Config;
+
+    /**
+     * @return mixed
+     */
+    public static function getConfig()
+    {
+        return self::$Config;
+    }
+
+    /**
+     * @return Doctrine\ORM\EntityManager
+     * @throws ORMException
+     */
+    public function getEm():Doctrine\ORM\EntityManager
+    {
+        return self::$Config->getEm();
+    }
+
+    /**
+     * @param $Config
+     * @return $this
+     */
+    public function setConfig( $Config): ThaiInterface
+    {
+        self::$Config = $Config;
+        return $this;
+    }
 
     /**
      * @return string

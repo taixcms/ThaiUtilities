@@ -44,6 +44,13 @@ class ThaiGettingClass
     {
         $config = $this::$Config;
         $ActionClass = new $className($this::$Config->getDb());
+
+        if(method_exists($ActionClass,'setConfig')){
+            $ActionClass->setConfig($config);
+        }
+
+
+
         $ActionClass->setNameDataBase($this::$Config->getDbName());
         $ActionClass->setRequest($_REQUEST)
             ->setsetmemcache_set(function ($memcache_obj, $memcachekey, $urows, $p1 = 0, $p2 = 60) {

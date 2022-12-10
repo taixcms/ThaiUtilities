@@ -48,7 +48,8 @@ class ThaiRender
         if($ClassName !== null){
             $this::$ClassName = $ClassName;
         }
-        $this::$Twig = new \Twig\Environment(new \Twig\Loader\FilesystemLoader($this::$Config->getTwigDir()), ['cache' => $this::$Config->isTwigCacheEnabled()]);
+
+        $this::$Twig = new \Twig\Environment(new \Twig\Loader\FilesystemLoader($this::$Config->getTwigDir()), ['cache' => $this::$Config->getTwigCacheEnabled()]);
         $this::$Twig->addFilter(new \Twig\TwigFilter('json', function ($array) {
             return json_encode($array ?: [],JSON_UNESCAPED_UNICODE);
         }));
@@ -97,7 +98,7 @@ class ThaiRender
 
                 //<script type="text/html" src="/projects/{{ ExtraData.domain }}/twig/components/calendar.html"></script>
 
-                if((!file_exists($dirAsset.'/cache/'.md5($AssetFiles['htmlName']).'.html')  || !$this::$Config->isTwigCacheEnabled()) && $AssetFiles['htmlName'] != ''  ){
+                if((!file_exists($dirAsset.'/cache/'.md5($AssetFiles['htmlName']).'.html')  || !$this::$Config->getTwigCacheEnabled()) && $AssetFiles['htmlName'] != ''  ){
 
                     foreach ($matches[8] as $link){
                         if (mb_strpos($link, '/') !== false && mb_strpos($link, '/') === 0) {
@@ -125,7 +126,7 @@ class ThaiRender
                 }
 
 
-                if((!file_exists($dirAsset.'/cache/'.md5($AssetFiles['jsName']).'.js') || !$this::$Config->isTwigCacheEnabled()) && $AssetFiles['jsName'] != '' ){
+                if((!file_exists($dirAsset.'/cache/'.md5($AssetFiles['jsName']).'.js') || !$this::$Config->getTwigCacheEnabled()) && $AssetFiles['jsName'] != '' ){
                     foreach ($matches[8] as $link){
                         if (mb_strpos($link, '/') !== false && mb_strpos($link, '/') === 0) {
                             $link= mb_substr( $link, 1, strlen($link) ) ;
@@ -150,7 +151,7 @@ class ThaiRender
                     }
                 }
 
-                if((!file_exists($dirAsset.'/cache/'.md5($AssetFiles['cssName']).'.css') || !$this::$Config->isTwigCacheEnabled()) && $AssetFiles['cssName'] !='' ){
+                if((!file_exists($dirAsset.'/cache/'.md5($AssetFiles['cssName']).'.css') || !$this::$Config->getTwigCacheEnabled()) && $AssetFiles['cssName'] !='' ){
                     foreach ($matches[8] as $link){
                         if (mb_strpos($link, '/') !== false && mb_strpos($link, '/') === 0) {
                             $link= mb_substr( $link, 1, strlen($link) ) ;
@@ -193,11 +194,11 @@ class ThaiRender
 
                 if($AssetFiles['jsName'] != ''){
                     $resultHTML.='
-    <script type="text/javascript" src="/'.$dirAsset.'/cache/'.md5($AssetFiles['jsName']).'.js'.(($this::$Config->isTwigCacheEnabled())?'':'?v='.rand(500, 99999999)).'"></script>';
+    <script type="text/javascript" src="/'.$dirAsset.'/cache/'.md5($AssetFiles['jsName']).'.js'.(($this::$Config->getTwigCacheEnabled())?'':'?v='.rand(500, 99999999)).'"></script>';
                 }
                 if($AssetFiles['cssName'] !=''){
                     $resultHTML.='
-    <link type="text/css" rel="stylesheet" href="/'.$dirAsset.'/cache/'.md5($AssetFiles['cssName']).'.css'.(($this::$Config->isTwigCacheEnabled())?'':'?v='.rand(500, 99999999)).'">
+    <link type="text/css" rel="stylesheet" href="/'.$dirAsset.'/cache/'.md5($AssetFiles['cssName']).'.css'.(($this::$Config->getTwigCacheEnabled())?'':'?v='.rand(500, 99999999)).'">
                             ';
                 }
                 if($AssetFiles['htmlName'] !=''){
