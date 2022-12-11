@@ -1226,7 +1226,13 @@ abstract class ThaiInterface
                         $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
                     }
                     if ($value['type'] === 'date' && isset($row[$value['fieldName']])) {
+                        $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('Y-m-d'));
+                    }
+                    if ($value['type'] === 'datetime' && isset($row[$value['fieldName']])) {
                         $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('Y-m-d H:i:s'));
+                    }
+                    if ($value['type'] === 'time' && isset($row[$value['fieldName']])) {
+                        $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('H:i:s'));
                     }
                     if ($value['type'] === 'string' && isset($row[$value['fieldName']])) {
                         $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
