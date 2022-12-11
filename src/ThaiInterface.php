@@ -5,6 +5,20 @@ namespace ThaiUtilities;
 use \Closure;
 use \Exception;
 
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\ORMSetup;
+use Doctrine\ORM\Query\Expr;
+
+use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Finder\Finder;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Helper\QuestionHelper;
+use Symfony\Component\Console\Helper\HelperSet;
+
 /**
  * Class ThaiInterface
  * */
@@ -13,7 +27,7 @@ abstract class ThaiInterface
     public $lastID;
     public $insert_id;
     public $ProjectID;
-    public $userid;
+    public $User_Id;
     public $debug;
     public $sqlType = '-sqlType-';
     public $LangConverter;
@@ -27,6 +41,7 @@ abstract class ThaiInterface
     public $ExtraData;
     public $Data;
     public $valueWhere;
+    public $entityName;
     public $memcache_time;
     public $fieldsWhere;
     public $PageSimpleURL;
@@ -77,7 +92,7 @@ abstract class ThaiInterface
      * @return Doctrine\ORM\EntityManager
      * @throws ORMException
      */
-    public function getEm():Doctrine\ORM\EntityManager
+    public function getEm():\Doctrine\ORM\EntityManager
     {
         return self::$Config->getEm();
     }
@@ -127,7 +142,22 @@ abstract class ThaiInterface
         $this->isAdmin = $isAdmin;
         return $this;
     }
+    /**
+     * @param string $EntityName
+     * @return $this
+     */
+    
+    public function setEntityName(string $EntityName): ThaiInterface
+    {
+        $this->entityName = $EntityName;
+        return $this;
+    }
 
+    public function getEntityName(): string
+    {
+        return $this->entityName;
+    }
+    
     /**
      * @param  $Db
      * @param  $className
@@ -148,6 +178,7 @@ abstract class ThaiInterface
             } else {
                 $this->TableName = strtolower(get_class($this));
             }
+;
             $this->mergeParam($Db)->setNameDataBase($Db->database);
         } else {
 
@@ -1035,7 +1066,7 @@ abstract class ThaiInterface
         $this->PageSimpleURL = $thisClass->PageSimpleURL;
         $this->AuthHost = $thisClass->AuthHost;
         $this->isLogged = $thisClass->isLogged;
-        $this->userid = $thisClass->userid;
+        $this->setUserid($thisClass->getUserId());
         $this->Lang = $thisClass->Lang;
         return $this;
     }
@@ -1993,6 +2024,26 @@ abstract class ThaiInterface
     }
 
     /**
+     * @param int|string $id
+     * @param string|null $key
+     * @return $this
+     * @throws Exception
+     */
+    public function ItemByID($id, string $key = NULL): ThaiInterface
+    {
+        $qb = $this->getEm()->createQueryBuilder();
+        $Result = $qb->select( ['A'] )
+            ->from( $this->getEntityName(), 'A')
+            ->Where($qb->expr()->in('A.id',':id'))
+            ->setParameter(':id',$id)
+            ->getQuery()->getArrayResult();
+        foreach ($this->ReformatRows( $Result ) as $one) {
+            $this->setData($key ?: $this->getTableName(), $one);
+        }
+        return $this;
+    }
+
+    /**
      * @param string $sqlText
      * @return bool
      */
@@ -2190,7 +2241,7 @@ abstract class ThaiInterface
      */
     public function IsLogged(): ThaiInterface
     {
-        if (!$this->isLogged && (int)$this->userid <= 0) {
+        if (!$this->isLogged && (int)$this->getUserId() <= 0) {
 //            if (function_exists('memcache_close')) {
 //                memcache_close();
 //            }
@@ -2209,7 +2260,7 @@ abstract class ThaiInterface
      */
     public function IsLoggedAjax(): ThaiInterface
     {
-        if (!$this->isLogged && (int)$this->userid <= 0) {
+        if (!$this->isLogged && (int)$this->getUserId() <= 0) {
             $this->addData('error', [
                 'method' => 'IsLoggedAjax',
                 'data' => [],
@@ -3359,7 +3410,6 @@ abstract class ThaiInterface
             'PageSimpleURL' => $this->PageSimpleURL,
             'SkeletonTmp' => $this->Skeleton,
             'sortOrder' => $this->sortOrder,
-            'UserId' => $this->userid,
             'testUrl'=>'',
             'RequestTmp' => $this->Request,
             'LimitTmp' => $this->getLimit(),
@@ -3398,7 +3448,6 @@ abstract class ThaiInterface
             'PageSimpleURL' => $this->PageSimpleURL,
             'Skeleton' => $this->Skeleton,
             'sortOrder' => $this->sortOrder,
-            'UserId' => $this->userid,
             'Request' => $this->Request,
             'Limit' => $this->getLimit(),
             'projectID' => $this->getProjectId(),
@@ -3584,7 +3633,7 @@ abstract class ThaiInterface
      */
     public function getUserId(): ?int
     {
-        return $this->userid;
+        return $this->User_Id;
     }
 
     /**
@@ -3697,7 +3746,7 @@ abstract class ThaiInterface
      */
     public function setUserid(int $userid): ThaiInterface
     {
-        $this->userid = $userid;
+        $this->User_Id = $userid;
         return $this;
     }
 
