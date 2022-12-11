@@ -1225,6 +1225,9 @@ abstract class ThaiInterface
                     if ($value['type'] === 'text' && isset($row[$value['fieldName']])) {
                         $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
                     }
+                    if ($value['type'] === 'date' && isset($row[$value['fieldName']])) {
+                        $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('Y-m-d H:i:s'));
+                    }
                     if ($value['type'] === 'string' && isset($row[$value['fieldName']])) {
                         $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
                     }
