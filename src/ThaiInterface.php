@@ -8,7 +8,7 @@ use \Exception;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\Query\Expr;
-
+use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -237,7 +237,7 @@ abstract class ThaiInterface
             $this->setData('error', array_merge($this->getData('error'), [[
                 'method' => 'getListByUserComponents',
                 'data' => [],
-                'TableName' => $this->TableName,
+                'TableName' => $this->getTableName(),
                 'key' => $key,
                 'msg' => $this->translated('Access denied'),
             ]]));
@@ -276,7 +276,7 @@ abstract class ThaiInterface
             if (!empty($key)) {
                 $this->setData($key, $arr);
             } else {
-                $this->setData($this->TableName, $arr);
+                $this->setData($this->getTableName(), $arr);
             }
 
         }
@@ -299,10 +299,10 @@ abstract class ThaiInterface
     public function parseSqlPermission(array $item, string $type = 'search'): string
     {
         $return_string = null;
-        if (!empty($this->Permissions[$this->TableName][$type])) {
-            $condition = str_replace('{thisUserID}', $this->getUser($this->getUserId())['id'], $this->Permissions[$this->TableName][$type]['condition']);
+        if (!empty($this->Permissions[$this->getTableName()][$type])) {
+            $condition = str_replace('{thisUserID}', $this->getUser($this->getUserId())['id'], $this->Permissions[$this->getTableName()][$type]['condition']);
             $condition_var = ' where ' . str_replace('{table}', $this->getTableNameWhere(), $condition);
-            foreach ($this->Permissions[$this->TableName][$type]['items'] as $value) {
+            foreach ($this->Permissions[$this->getTableName()][$type]['items'] as $value) {
                 if ($value['query'] != '') {
                     foreach ($item as $k => $v) {
                         $value['query'] = str_replace('{' . $k . '}', $v, $value['query']);
@@ -336,9 +336,9 @@ abstract class ThaiInterface
      */
     public function checkPermission(array $item, string $type): ?bool
     {
-        if (!empty($this->Permissions[$this->TableName][$type])) {
-            $condition_var = $this->Permissions[$this->TableName][$type]['condition'];
-            foreach ($this->Permissions[$this->TableName][$type]['items'] as $keyItems => $valueItems) {
+        if (!empty($this->Permissions[$this->getTableName()][$type])) {
+            $condition_var = $this->Permissions[$this->getTableName()][$type]['condition'];
+            foreach ($this->Permissions[$this->getTableName()][$type]['items'] as $keyItems => $valueItems) {
                 foreach ($item as $k => $v) {
                     if ($k != 'attachments' && gettype($v) != 'array') {
                         $valueItems['query'] = str_replace('{' . $k . '}', $v, $valueItems['query']);
@@ -350,34 +350,34 @@ abstract class ThaiInterface
                 if ($valueItems['query'] != '') {
                     $permissions = $this->query($valueItems['query']);
                     if ($permissions) {
-                        $condition_var = str_replace('{' . $this->Permissions[$this->TableName][$type]['items'][$keyItems]['id'] . '}', 'true', $condition_var);
-                        $this->Permissions[$this->TableName][$type]['items'][$keyItems]['check'] = true;
+                        $condition_var = str_replace('{' . $this->Permissions[$this->getTableName()][$type]['items'][$keyItems]['id'] . '}', 'true', $condition_var);
+                        $this->Permissions[$this->getTableName()][$type]['items'][$keyItems]['check'] = true;
                     } else {
-                        $condition_var = str_replace('{' . $this->Permissions[$this->TableName][$type]['items'][$keyItems]['id'] . '}', 'false', $condition_var);
-                        $this->Permissions[$this->TableName][$type]['items'][$keyItems]['check'] = false;
+                        $condition_var = str_replace('{' . $this->Permissions[$this->getTableName()][$type]['items'][$keyItems]['id'] . '}', 'false', $condition_var);
+                        $this->Permissions[$this->getTableName()][$type]['items'][$keyItems]['check'] = false;
                     }
                 }
             }
             $cond = eval('return ' . $condition_var . ';');
-            if (count($this->Permissions[$this->TableName][$type]['items']) === 0) {
+            if (count($this->Permissions[$this->getTableName()][$type]['items']) === 0) {
                 $cond = true;
             }
             if (!empty($item['id']) && ($type != 'search')) {
                 $this->setCondition($type, [
                     'id' => $item['id'],
                     'is' => $cond,
-                    'caption' => $this->translated($this->Permissions[$this->TableName][$type]['caption']),
-                    'message' => $this->translated($this->Permissions[$this->TableName][$type]['message']),
-                    'caption_error' => $this->translated($this->Permissions[$this->TableName][$type]['caption_error']),
-                    'message_error' => $this->translated($this->Permissions[$this->TableName][$type]['message_error'])
+                    'caption' => $this->translated($this->Permissions[$this->getTableName()][$type]['caption']),
+                    'message' => $this->translated($this->Permissions[$this->getTableName()][$type]['message']),
+                    'caption_error' => $this->translated($this->Permissions[$this->getTableName()][$type]['caption_error']),
+                    'message_error' => $this->translated($this->Permissions[$this->getTableName()][$type]['message_error'])
                 ]);
             } else {
                 $this->setCondition($type, [
                     'is' => $cond,
-                    'caption' => $this->translated($this->Permissions[$this->TableName][$type]['caption']),
-                    'message' => $this->translated($this->Permissions[$this->TableName][$type]['message']),
-                    'caption_error' => $this->translated($this->Permissions[$this->TableName][$type]['caption_error']),
-                    'message_error' => $this->translated($this->Permissions[$this->TableName][$type]['message_error'])
+                    'caption' => $this->translated($this->Permissions[$this->getTableName()][$type]['caption']),
+                    'message' => $this->translated($this->Permissions[$this->getTableName()][$type]['message']),
+                    'caption_error' => $this->translated($this->Permissions[$this->getTableName()][$type]['caption_error']),
+                    'message_error' => $this->translated($this->Permissions[$this->getTableName()][$type]['message_error'])
                 ]);
             }
             return $cond;
@@ -425,14 +425,14 @@ abstract class ThaiInterface
      */
     public function setCondition(string $ConditionType, array $value = []): ThaiInterface
     {
-        if (empty($this->Condition[$this->TableName])) {
-            $this->Condition[$this->TableName] = [];
-            $this->Condition[$this->TableName][$ConditionType] = [];
+        if (empty($this->Condition[$this->getTableName()])) {
+            $this->Condition[$this->getTableName()] = [];
+            $this->Condition[$this->getTableName()][$ConditionType] = [];
         }
         if (!empty($value['id'])) {
-            $this->Condition[$this->TableName][$ConditionType][$value['id']] = ['is' => $value['is'], 'caption' => $value['caption'], 'message' => $value['message'], 'caption_error' => $value['caption_error'], 'message_error' => $value['message_error']];
+            $this->Condition[$this->getTableName()][$ConditionType][$value['id']] = ['is' => $value['is'], 'caption' => $value['caption'], 'message' => $value['message'], 'caption_error' => $value['caption_error'], 'message_error' => $value['message_error']];
         } else {
-            $this->Condition[$this->TableName][$ConditionType] = ['is' => $value['is'], 'caption' => $value['caption'], 'message' => $value['message'], 'caption_error' => $value['caption_error'], 'message_error' => $value['message_error']];
+            $this->Condition[$this->getTableName()][$ConditionType] = ['is' => $value['is'], 'caption' => $value['caption'], 'message' => $value['message'], 'caption_error' => $value['caption_error'], 'message_error' => $value['message_error']];
         }
         return $this;
     }
@@ -443,7 +443,7 @@ abstract class ThaiInterface
      */
     public function getCondition(string $ConditionType): ?array
     {
-        if (!empty($this->Condition[$this->TableName])) {
+        if (!empty($this->Condition[$this->getTableName()])) {
             if (!empty($this->Condition[$ConditionType])) {
                 return $this->Condition[$ConditionType] ?: null;
             } else {
@@ -459,10 +459,10 @@ abstract class ThaiInterface
      */
     public function getPermission(): ThaiInterface
     {
-        $this->Permissions[$this->TableName] = [];
-        $permissions = $this->query("SELECT * FROM permissions where components= '" . $this->TableName . "'");
+        $this->Permissions[$this->getTableName()] = [];
+        $permissions = $this->query("SELECT * FROM permissions where components= '" . $this->getTableName() . "'");
         if ($permissions) {
-            $this->Permissions[$this->TableName] = [];
+            $this->Permissions[$this->getTableName()] = [];
             if (!empty($permissions)) {
                 foreach ($permissions as $v) {
                     $p_g = $this->query("SELECT * FROM permissions_groups where id= '" . $v['idgroup'] . "' and enabled = '1'");
@@ -479,7 +479,7 @@ abstract class ThaiInterface
                                 }
                             }
 
-                            $this->Permissions[$this->TableName][$v_g['permission_type']] = [
+                            $this->Permissions[$this->getTableName()][$v_g['permission_type']] = [
                                 'condition' => $this->dbStringOld(base64_decode($v_g['condition_text'])),
                                 'items' => $ArrSettings,
                                 'message' => $this->dbStringOld($v_g['message']),
@@ -594,7 +594,7 @@ abstract class ThaiInterface
      */
     public function setCrossAjaxData(string $Key, $CrossAjaxData): ThaiInterface
     {
-        $this->CrossAjaxData[$this->TableName][$Key] = $CrossAjaxData;
+        $this->CrossAjaxData[$this->getTableName()][$Key] = $CrossAjaxData;
         return $this;
     }
 
@@ -605,7 +605,7 @@ abstract class ThaiInterface
     public function translated(string $str): string
     {
         $funcCalBack = $this->getLangConverter();
-        return (new \users($this->Connect))->translated($funcCalBack, $str, $this->Lang, $this->TableName);
+        return (new \users($this->Connect))->translated($funcCalBack, $str, $this->Lang, $this->getTableName());
     }
 
     /**
@@ -633,7 +633,7 @@ abstract class ThaiInterface
      */
     public function setAttachmentsStatus(): ThaiInterface
     {
-        $this->Attachments[$this->TableName] = true;
+        $this->Attachments[$this->getTableName()] = true;
         $this->setCrossAjaxData('Attachments', true);
         return $this;
     }
@@ -644,8 +644,8 @@ abstract class ThaiInterface
     public function getAttachmentsStatus(): bool
     {
         if (!empty($this->Attachments)) {
-            if (!empty($this->Attachments[$this->TableName])) {
-                return $this->Attachments[$this->TableName];
+            if (!empty($this->Attachments[$this->getTableName()])) {
+                return $this->Attachments[$this->getTableName()];
             }
         }
         return false;
@@ -679,7 +679,7 @@ abstract class ThaiInterface
      */
     public function setAutoSearch(int $autoSearch): ThaiInterface
     {
-        $this->autoSearch[$this->TableName] = $autoSearch;
+        $this->autoSearch[$this->getTableName()] = $autoSearch;
         return $this;
     }
 
@@ -690,7 +690,7 @@ abstract class ThaiInterface
      */
     public function setClassAction(string $ClassAction): ThaiInterface
     {
-        $this->ClassAction[$this->TableName] = $ClassAction;
+        $this->ClassAction[$this->getTableName()] = $ClassAction;
         return $this;
     }
 
@@ -905,7 +905,7 @@ abstract class ThaiInterface
      */
     public function getSkeleton(): ThaiInterface
     {
-        if ($this->Connect && empty($this->Skeleton[$this->TableName])) {
+        if ($this->Connect && empty($this->Skeleton[$this->getTableName()])) {
             $this->init();
             $this->setCheckSum($this->getTableNameWhere());
             $arr = [];
@@ -967,12 +967,12 @@ abstract class ThaiInterface
                 $this->setData('error', array_merge($this->getData('error'), [[
                     'method' => 'getSkeleton',
                     'data' => [],
-                    'TableName' => $this->TableName,
+                    'TableName' => $this->getTableName(),
                     'key' => '>> ' . $this->getTableNameWhere() . ' << ' . $this->translated('dont table'),
                     'msg' => $this->translated('this and other methods are called only for a class that has tables in the database, for intermediate classes you do not need to specify methods, this creates an extra load on the server'),
                 ]]));
             }
-            $this->setSkeleton($this->TableName, $arr);
+            $this->setSkeleton($this->getTableName(), $arr);
         }
         return $this;
     }
@@ -995,7 +995,7 @@ abstract class ThaiInterface
      */
     public function setSkeletonField(array $Value): ThaiInterface
     {
-        $this->Skeleton[$this->TableName][] = $Value;
+        $this->Skeleton[$this->getTableName()][] = $Value;
         return $this;
     }
 
@@ -1007,11 +1007,11 @@ abstract class ThaiInterface
     public function setDefaultFieldType(array $fieldInfo): ThaiInterface
     {
         $this->setCrossAjaxData('DefaultFieldType', $fieldInfo);
-        if (empty($this->DefaultFieldType[$this->TableName])) {
+        if (empty($this->DefaultFieldType[$this->getTableName()])) {
             $this->DefaultFieldType = [];
-            $this->DefaultFieldType[$this->TableName] = [];
+            $this->DefaultFieldType[$this->getTableName()] = [];
         }
-        $this->DefaultFieldType[$this->TableName][$fieldInfo[0]] = $fieldInfo[1];
+        $this->DefaultFieldType[$this->getTableName()][$fieldInfo[0]] = $fieldInfo[1];
         return $this;
     }
 
@@ -1020,7 +1020,7 @@ abstract class ThaiInterface
      */
     public function isSelect(): ?bool
     {
-        return (count($this->getDataObject()['Data'][$this->TableName]) >= 1);
+        return (count($this->getDataObject()['Data'][$this->getTableName()]) >= 1);
     }
 
     /**
@@ -1029,9 +1029,9 @@ abstract class ThaiInterface
      */
     public function getDefaultFieldType(string $fieldName): ?string
     {
-        if (!empty($this->DefaultFieldType[$this->TableName])) {
-            if (!empty($this->DefaultFieldType[$this->TableName][$fieldName])) {
-                return $this->DefaultFieldType[$this->TableName][$fieldName];
+        if (!empty($this->DefaultFieldType[$this->getTableName()])) {
+            if (!empty($this->DefaultFieldType[$this->getTableName()][$fieldName])) {
+                return $this->DefaultFieldType[$this->getTableName()][$fieldName];
             } else {
                 return null;
             }
@@ -1178,16 +1178,85 @@ abstract class ThaiInterface
      */
     public function ReformatSql(string $sql): ?string
     {
-        if (!empty($this->getsortOrderFieldName()[$this->TableName])) {
-            $sql = $sql . " ORDER BY " . $this->getTableNameWhere() . "." . $this->getsortOrderFieldName()[$this->TableName] . " " . $this->getsortOrderType()[$this->TableName];
+        if (!empty($this->getsortOrderFieldName()[$this->getTableName()])) {
+            $sql = $sql . " ORDER BY " . $this->getTableNameWhere() . "." . $this->getsortOrderFieldName()[$this->getTableName()] . " " . $this->getsortOrderType()[$this->getTableName()];
         }
-        if (!empty($this->getLimit()[$this->TableName])) {
-            $sql = $sql . ' LIMIT ' . $this->getLimit()[$this->TableName];
+        if (!empty($this->getLimit()[$this->getTableName()])) {
+            $sql = $sql . ' LIMIT ' . $this->getLimit()[$this->getTableName()];
         }
-        if (!empty($this->getOffset()[$this->TableName])) {
-            $sql = $sql . ' OFFSET ' . $this->getOffset()[$this->TableName];
+        if (!empty($this->getOffset()[$this->getTableName()])) {
+            $sql = $sql . ' OFFSET ' . $this->getOffset()[$this->getTableName()];
         }
         return $sql;
+    }
+
+    /**
+     * @param array|null $rows
+     * @return array
+     * @throws Exception
+     */
+    public function ReformatRowsEntityes(array $rows = null): ?array
+    {
+        $class = $this->getConfig()->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName());
+        $arr = [];
+        if ($rows) {
+            $newArray = [];
+            foreach ($rows as $key=>$row) {
+                $newArray[$key] = [];
+                foreach ($class->fieldMappings as $value) {
+                    if ($value['type'] === 'integer' && isset($row[$value['fieldName']])) {
+                        $newArray[$key][$value['columnName']] = (int)$row[$value['fieldName']];
+                    }
+                    if ($value['type'] === 'double' && isset($row[$value['fieldName']])) {
+                        $newArray[$key][$value['columnName']] = (double)$row[$value['fieldName']];
+                    }
+                    if ($value['type'] === 'decimal' && isset($row[$value['fieldName']])) {
+                        $newArray[$key][$value['columnName']] = (double)$row[$value['fieldName']];
+                    }
+                    if ($value['type'] === 'tinyint' && isset($row[$value['fieldName']])) {
+                        $newArray[$key][$value['columnName']] = (int)$row[$value['fieldName']];
+                    }
+                    if ($value['type'] === 'array' && isset($row[$value['fieldName']])) {
+                        $newArray[$key][$value['columnName']] = explode('|', $row[$value['fieldName']]);
+                    }
+                    if ($value['type'] === 'varchar' && isset($row[$value['fieldName']])) {
+                        $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
+                    }
+                    if ($value['type'] === 'text' && isset($row[$value['fieldName']])) {
+                        $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
+                    }
+                    if ($value['type'] === 'string' && isset($row[$value['fieldName']])) {
+                        $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
+                    }
+                    if ($value['type'] === 'mediumtext' && isset($row[$value['fieldName']])) {
+                        $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
+                    }
+                    if ($value['columnName'] === 'attachments') {
+                        $this->setAttachmentsStatus();
+                    }
+                }
+
+                if (!empty($newArray['attachments'])) {
+                    $newArray[$key]['attachments'] = $this->getAttachments($newArray[$key]['attachments']);
+                } else {
+                    $newArray[$key]['attachments'] = [];
+                }
+                $cFunc = $this->getCallBack();
+                $itemValue = $cFunc($newArray[$key]);
+                if ($itemValue) {
+                    if (!empty($itemValue['id'])) {
+                        $this->setIDs($itemValue['id']);
+                    }
+                    $Permission = $this->checkPermission($itemValue, 'viewItem');
+                    if ($Permission) {
+                        $this->setConditionToDataObject($itemValue);
+                        $arr[] = $itemValue;
+                    }
+                }
+
+            }
+        }
+        return $arr;
     }
 
     /**
@@ -1201,7 +1270,7 @@ abstract class ThaiInterface
         $arr = [];
         if ($rows) {
             foreach ($rows as $row) {
-                foreach ($this->Skeleton[$this->TableName] as $value) {
+                foreach ($this->Skeleton[$this->getTableName()] as $value) {
                     if ($value['fieldType'] === 'int' && isset($row[$value['fieldName']])) {
                         $row[$value['fieldName']] = (int)$row[$value['fieldName']];
                     }
@@ -1260,7 +1329,7 @@ abstract class ThaiInterface
      */
     public function setConditionToDataObject(array $item = []): ThaiInterface
     {
-        $sqlText = "SELECT * FROM permissions WHERE components = '" . $this->TableName . "'";
+        $sqlText = "SELECT * FROM permissions WHERE components = '" . $this->getTableName() . "'";
         $condition = $this->query($sqlText);
         if (!empty($condition)) {
             foreach ($condition as $rowCondition) {
@@ -1467,7 +1536,7 @@ abstract class ThaiInterface
      */
     public function setSqlCount(string $sqlCount): ThaiInterface
     {
-        $this->sqlCount[$this->TableName] = $sqlCount;
+        $this->sqlCount[$this->getTableName()] = $sqlCount;
         return $this;
     }
 
@@ -1486,7 +1555,7 @@ abstract class ThaiInterface
      */
     public function setSortOrder(string $sortOrder): ThaiInterface
     {
-        $this->sortOrder[$this->TableName] = $sortOrder;
+        $this->sortOrder[$this->getTableName()] = $sortOrder;
         return $this;
     }
 
@@ -1498,7 +1567,7 @@ abstract class ThaiInterface
     public function setSortOrderType(string $sortOrderType): ThaiInterface
     {
         $this->setCrossAjaxData('sortOrderType', $sortOrderType);
-        $this->sortOrderType[$this->TableName] = $this->dbString($sortOrderType);
+        $this->sortOrderType[$this->getTableName()] = $this->dbString($sortOrderType);
         return $this;
     }
 
@@ -1533,7 +1602,7 @@ abstract class ThaiInterface
     public function setSortOrderFieldName(string $sortOrderFieldName): ThaiInterface
     {
         $this->setCrossAjaxData('sortOrderFieldName', $sortOrderFieldName);
-        $this->sortOrderFieldName[$this->TableName] = $this->dbString($sortOrderFieldName);
+        $this->sortOrderFieldName[$this->getTableName()] = $this->dbString($sortOrderFieldName);
         return $this;
     }
 
@@ -1550,7 +1619,7 @@ abstract class ThaiInterface
      */
     public function getSortOrderType(): array
     {
-        return $this->sortOrderType ?: [$this->TableName => 'ASC'];
+        return $this->sortOrderType ?: [$this->getTableName() => 'ASC'];
     }
 
     /**
@@ -1685,7 +1754,7 @@ abstract class ThaiInterface
      */
     public function getListByUser(string $key = null): ThaiInterface
     {
-        if (empty($this->getLimit()[$this->TableName])) {
+        if (empty($this->getLimit()[$this->getTableName()])) {
             $this->setLimit(10);
         }
         $getRequest = $this->getRequest();
@@ -1708,7 +1777,7 @@ abstract class ThaiInterface
                     )
                 )
             );
-            $this->setData($key ?: $this->TableName, $arr);
+            $this->setData($key ?: $this->getTableName(), $arr);
         }
         return $this;
     }
@@ -1719,8 +1788,8 @@ abstract class ThaiInterface
      */
     public function getIDs(): array
     {
-        if ($this->IDs[$this->TableName]) {
-            return $this->IDs[$this->TableName];
+        if ($this->IDs[$this->getTableName()]) {
+            return $this->IDs[$this->getTableName()];
         } else {
             return [];
         }
@@ -1733,7 +1802,7 @@ abstract class ThaiInterface
     public function getFieldsIDs(string $key = ''): ?array
     {
         if ($key === '') {
-            return $this->IDs[$this->TableName];
+            return $this->IDs[$this->getTableName()];
         } else {
             return $this->IDs[$key];
         }
@@ -1747,7 +1816,7 @@ abstract class ThaiInterface
     {
         $output_arr = [];
 
-        foreach ($this->getData($this->TableName) as $k => $v) {
+        foreach ($this->getData($this->getTableName()) as $k => $v) {
 
 
             if (gettype($v) == 'array') {
@@ -1781,7 +1850,7 @@ abstract class ThaiInterface
      */
     public function setIDs(int $id): ThaiInterface
     {
-        $this->IDs[$this->TableName][] = $id;
+        $this->IDs[$this->getTableName()][] = $id;
         return $this;
     }
 
@@ -1797,13 +1866,13 @@ abstract class ThaiInterface
             $this->setData('error', array_merge($this->getData('error'), [[
                 'method' => 'getListToPermission',
                 'data' => [],
-                'TableName' => $this->TableName,
+                'TableName' => $this->getTableName(),
                 'key' => $key,
                 'msg' => $this->translated('Access denied'),
             ]]));
             return $this;
         }
-        if (empty($this->getLimit()[$this->TableName])) {
+        if (empty($this->getLimit()[$this->getTableName()])) {
             $this->setLimit(10);
         }
 
@@ -1827,7 +1896,7 @@ abstract class ThaiInterface
                     )
                 )
             );
-            $this->setData($key ?: $this->TableName, $arr);
+            $this->setData($key ?: $this->getTableName(), $arr);
         }
         return $this;
     }
@@ -1845,13 +1914,13 @@ abstract class ThaiInterface
             $this->setData('error', array_merge($this->getData('error'), [[
                 'method' => 'getList',
                 'data' => [],
-                'TableName' => $this->TableName,
+                'TableName' => $this->getTableName(),
                 'key' => $key,
                 'msg' => $this->translated('Access denied'),
             ]]));
             return $this;
         }
-        if (empty($this->getLimit()[$this->TableName])) {
+        if (empty($this->getLimit()[$this->getTableName()])) {
             $this->setLimit(10);
         }
         $getRequest = $this->getRequest();
@@ -1873,7 +1942,7 @@ abstract class ThaiInterface
                     )
                 )
             );
-            $this->setData($key ?: $this->TableName, $arr);
+            $this->setData($key ?: $this->getTableName(), $arr);
         }
         return $this;
     }
@@ -1900,7 +1969,7 @@ abstract class ThaiInterface
                     )
                 )
             );
-            $this->setData($key ?: $this->TableName, $arr);
+            $this->setData($key ?: $this->getTableName(), $arr);
         }
         return $this;
     }
@@ -1930,13 +1999,13 @@ abstract class ThaiInterface
                 if (!empty($key)) {
                     $this->setData($key, $arr[0]);
                 } else {
-                    $this->setData($this->TableName, $arr[0]);
+                    $this->setData($this->getTableName(), $arr[0]);
                 }
             } else {
                 if (!empty($key)) {
                     $this->setData($key, []);
                 } else {
-                    $this->setData($this->TableName, []);
+                    $this->setData($this->getTableName(), []);
                 }
             }
 
@@ -1965,7 +2034,7 @@ abstract class ThaiInterface
                     )
                 )
             );
-            $this->setData($key ?: $this->TableName, $arr);
+            $this->setData($key ?: $this->getTableName(), $arr);
         }
         return $this;
     }
@@ -1983,7 +2052,7 @@ abstract class ThaiInterface
             $this->setData('error', array_merge($this->getData('error'), [[
                 'method' => 'getItemByID',
                 'data' => [],
-                'TableName' => $this->TableName,
+                'TableName' => $this->getTableName(),
                 'key' => $key,
                 'msg' => '($id = 0) -  You are trying to get records from the table by ID equal to zero',
             ]]));
@@ -2004,7 +2073,7 @@ abstract class ThaiInterface
                 $this->setData('error', array_merge($this->getData('error'), [[
                     'method' => 'getItemByID',
                     'data' => $arr,
-                    'TableName' => $this->TableName,
+                    'TableName' => $this->getTableName(),
                     'key' => $key,
                     'msg' => 'The record was not found in the database, the method should not return an empty response',
                 ]]));
@@ -2013,12 +2082,12 @@ abstract class ThaiInterface
                 $this->setData('error', array_merge($this->getData('error'), [[
                     'method' => 'getItemByID',
                     'data' => $arr,
-                    'TableName' => $this->TableName,
+                    'TableName' => $this->getTableName(),
                     'key' => $key,
                     'msg' => 'More than 1 record found, the method should not return an array, then use the method - getItemsByID',
                 ]]));
             }
-            $this->setData($key ?: $this->TableName, (!empty($arr[0]) ? $arr[0] : []));
+            $this->setData($key ?: $this->getTableName(), (!empty($arr[0]) ? $arr[0] : []));
         }
         return $this;
     }
@@ -2031,14 +2100,47 @@ abstract class ThaiInterface
      */
     public function ItemByID($id, string $key = NULL): ThaiInterface
     {
-        $qb = $this->getEm()->createQueryBuilder();
-        $Result = $qb->select( ['A'] )
-            ->from( $this->getEntityName(), 'A')
-            ->Where($qb->expr()->in('A.id',':id'))
-            ->setParameter(':id',$id)
-            ->getQuery()->getArrayResult();
-        foreach ($this->ReformatRows( $Result ) as $one) {
-            $this->setData($key ?: $this->getTableName(), $one);
+        $CacheAdapter = $this->getConfig()->getCacheAdapterRedis();
+        $em = $this->getConfig()->getEm();
+        $qb = $em->createQueryBuilder();
+
+        $Result = $CacheAdapter->get('item-by-id-'.$this->getTableName().'-'.$id, function (ItemInterface $item) use( $qb, $id ) {
+                      $item->expiresAfter(3600);
+                       $Result = [];
+                       $arr = $qb->select( ['A'] )
+                                ->from( $this->getEntityName(), 'A')
+                                ->Where($qb->expr()->in('A.id',':id'))
+                                ->setParameter(':id',$id)
+                                ->setMaxResults(1)
+                                ->getQuery()->getArrayResult();
+
+                        foreach ($this->ReformatRowsEntityes( $arr ) as $one) {
+                            $Result[]=$one;
+                        }
+                       return $Result;
+                 });
+
+        $itemValue = null;
+        foreach ( $Result as $one) {
+            $cFunc = $this->getCallBack();
+            $itemValue = $cFunc($one);
+            if ($itemValue) {
+                if (!empty($itemValue['id'])) {
+                    $this->setIDs($itemValue['id']);
+                }
+            }
+        }
+
+        if ($itemValue!==null) {
+            $Permission = $this->checkPermission($itemValue, 'viewItem');
+            if ( $Permission) {
+                $this->setConditionToDataObject($itemValue);
+                $this->setData($key ?: $this->getTableName(), $itemValue);
+            }else{
+                $this->setData($key ?: $this->getTableName(), null);
+            }
+        }else{
+            $this->setData($key ?: $this->getTableName(), null);
         }
         return $this;
     }
@@ -2125,7 +2227,7 @@ abstract class ThaiInterface
             $this->setData('error', array_merge($this->getData('error'), [[
                 'method' => 'getItemByUserID',
                 'data' => [],
-                'TableName' => $this->TableName,
+                'TableName' => $this->getTableName(),
                 'key' => $key,
                 'msg' => '($UserID = 0) -  You are trying to get records from the table by user ID equal to zero',
             ]]));
@@ -2146,7 +2248,7 @@ abstract class ThaiInterface
                 $this->setData('error', array_merge($this->getData('error'), [[
                     'method' => 'getItemByUserID',
                     'data' => $arr,
-                    'TableName' => $this->TableName,
+                    'TableName' => $this->getTableName(),
                     'key' => $key,
                     'msg' => 'The record was not found in the database, the method should not return an empty response',
                 ]]));
@@ -2155,13 +2257,62 @@ abstract class ThaiInterface
                 $this->setData('error', array_merge($this->getData('error'), [[
                     'method' => 'getItemByUserID',
                     'data' => $arr,
-                    'TableName' => $this->TableName,
+                    'TableName' => $this->getTableName(),
                     'key' => $key,
                     'msg' => 'More than 1 record found, the method should not return an array, if you need to select several records by ID, then use the method - getItemsByUserID',
                 ]]));
             }
-            $this->setData($key ?: $this->TableName, (!empty($arr[0]) ? $arr[0] : null));
+            $this->setData($key ?: $this->getTableName(), (!empty($arr[0]) ? $arr[0] : null));
         }
+        return $this;
+    }
+
+    /**
+     * @param int $UserID
+     * @param string|null $key
+     * @return $this
+     * @throws Exception
+     */
+    public function ItemByUserID($UserID, string $key = NULL): ThaiInterface
+    {
+        $CacheAdapter = $this->getConfig()->getCacheAdapterRedis();
+        $qb = $this->getConfig()->getEm()->createQueryBuilder();
+        $Result = $CacheAdapter->get('item-by-user-id-'.$this->getTableName().'-'.$UserID, function (ItemInterface $item) use( $qb, $UserID ) {
+            $item->expiresAfter(3600);
+            $Result = [];
+            $arr = $qb->select( ['A'] )
+                ->from( $this->getEntityName(), 'A')
+                ->Where($qb->expr()->in('A.userid',':userid'))
+                ->setParameter(':userid',$UserID)
+                ->getQuery()->getArrayResult();
+            foreach ($this->ReformatRowsEntityes( $arr ) as $one) {
+                $Result[]=$one;
+            }
+            return $Result;
+        });
+        $itemValue = null;
+        foreach ( $Result as $one) {
+            $cFunc = $this->getCallBack();
+            $itemValue = $cFunc($one);
+            if ($itemValue) {
+                if (!empty($itemValue['id'])) {
+                    $this->setIDs($itemValue['id']);
+                }
+            }
+        }
+
+        if ($itemValue!==null) {
+            $Permission = $this->checkPermission($itemValue, 'viewItem');
+            if ( $Permission) {
+                $this->setConditionToDataObject($itemValue);
+                $this->setData($key ?: $this->getTableName(), $itemValue);
+            }else{
+                $this->setData($key ?: $this->getTableName(), null);
+            }
+        }else{
+            $this->setData($key ?: $this->getTableName(), null);
+        }
+
         return $this;
     }
 
@@ -2185,7 +2336,7 @@ abstract class ThaiInterface
                     )
                 )
             );
-            $this->setData($key ?: $this->TableName, $arr);
+            $this->setData($key ?: $this->getTableName(), $arr);
         }
         return $this;
     }
@@ -2210,7 +2361,7 @@ abstract class ThaiInterface
                     )
                 )
             );
-            $this->setData($key ?: $this->TableName, $arr);
+            $this->setData($key ?: $this->getTableName(), $arr);
         }
         return $this;
     }
@@ -2264,7 +2415,7 @@ abstract class ThaiInterface
             $this->addData('error', [
                 'method' => 'IsLoggedAjax',
                 'data' => [],
-                'TableName' => $this->TableName,
+                'TableName' => $this->getTableName(),
                 'key' => '',
                 'msg' => $this->translated('Access to the method is allowed only to authorized users'),
             ]);
@@ -2305,9 +2456,9 @@ abstract class ThaiInterface
     public function setLimit(int $Limit): ThaiInterface
     {
         if (!empty($this->getRequest()['Limit'])) {
-            $this->Limit[$this->TableName] = (int)$this->getRequest()['Limit'];
+            $this->Limit[$this->getTableName()] = (int)$this->getRequest()['Limit'];
         } else {
-            $this->Limit[$this->TableName] = $Limit;
+            $this->Limit[$this->getTableName()] = $Limit;
         }
         return $this;
     }
@@ -2381,7 +2532,7 @@ abstract class ThaiInterface
      */
     public function setCountSelectResult(int $CountSelectResult): ThaiInterface
     {
-        $this->CountSelectResult[$this->TableName] = $CountSelectResult;
+        $this->CountSelectResult[$this->getTableName()] = $CountSelectResult;
         return $this;
     }
 
@@ -2401,9 +2552,9 @@ abstract class ThaiInterface
      */
     public function getCount(): ThaiInterface
     {
-        if (!empty($this->getSqlCount()[$this->TableName])) {
-            $uRow = $this->getCache('resume_count_' . md5($this->getSqlCount()[$this->TableName]), function () {
-                return $this->query($this->getSqlCount()[$this->TableName]);
+        if (!empty($this->getSqlCount()[$this->getTableName()])) {
+            $uRow = $this->getCache('resume_count_' . md5($this->getSqlCount()[$this->getTableName()]), function () {
+                return $this->query($this->getSqlCount()[$this->getTableName()]);
             });
             if (!empty($uRow[0]['COUNT(*)'])) {
                 $this->setCountSelectResult((int)$uRow[0]['COUNT(*)']);
@@ -2413,7 +2564,7 @@ abstract class ThaiInterface
             $this->setData('error', array_merge($this->getData('error'), [[
                 'method' => 'getCount',
                 'data' => [],
-                'TableName' => $this->TableName,
+                'TableName' => $this->getTableName(),
                 'key' => '',
                 'msg' => 'To call the getCount method, you must first call the getList method, or getListAll',
             ]]));
@@ -2427,17 +2578,17 @@ abstract class ThaiInterface
     public function getCountSelectResult(): array
     {
         $test = true;
-        if (!empty($this->CountSelectResult[$this->TableName])) {
-            if ($this->CountSelectResult[$this->TableName] === 0) {
+        if (!empty($this->CountSelectResult[$this->getTableName()])) {
+            if ($this->CountSelectResult[$this->getTableName()] === 0) {
                 $this->setCountPage(0);
             }
-            if (!empty($this->CountSelectResult[$this->TableName])) {
-                if (!empty($this->getLimit()[$this->TableName])) {
-                    $countPage = ceil($this->CountSelectResult[$this->TableName] / $this->getLimit()[$this->TableName]);
+            if (!empty($this->CountSelectResult[$this->getTableName()])) {
+                if (!empty($this->getLimit()[$this->getTableName()])) {
+                    $countPage = ceil($this->CountSelectResult[$this->getTableName()] / $this->getLimit()[$this->getTableName()]);
                     if ((int)$countPage === 1) {
-                        if ($this->CountSelectResult[$this->TableName] < $this->getLimit()[$this->TableName]) {
+                        if ($this->CountSelectResult[$this->getTableName()] < $this->getLimit()[$this->getTableName()]) {
                             $countPage = 0;
-                            $this->numberPage[$this->TableName] = [];
+                            $this->numberPage[$this->getTableName()] = [];
                         } else {
                             $countPage = 2;
                         }
@@ -2450,10 +2601,10 @@ abstract class ThaiInterface
                 }
             }
             if ($test) {
-                $this->numberPage[$this->TableName] = [];
+                $this->numberPage[$this->getTableName()] = [];
             }
         } else {
-            $this->numberPage[$this->TableName] = [];
+            $this->numberPage[$this->getTableName()] = [];
             $this->setCountPage(0);
         }
 
@@ -2467,9 +2618,9 @@ abstract class ThaiInterface
     public function setOffset(int $Offset): ThaiInterface
     {
         if (!empty($this->getRequest()['Offset'])) {
-            $this->Offset[$this->TableName] = (int)$this->getRequest()['Offset'];
+            $this->Offset[$this->getTableName()] = (int)$this->getRequest()['Offset'];
         } else {
-            $this->Offset[$this->TableName] = $Offset;
+            $this->Offset[$this->getTableName()] = $Offset;
         }
         return $this;
     }
@@ -2496,7 +2647,7 @@ abstract class ThaiInterface
      */
     public function setCountPage(int $countPage): ThaiInterface
     {
-        $this->countPage[$this->TableName] = $countPage;
+        $this->countPage[$this->getTableName()] = $countPage;
         return $this;
     }
 
@@ -2525,7 +2676,7 @@ abstract class ThaiInterface
      */
     public function setNumberPage(int $numberPage): ThaiInterface
     {
-        $this->numberPage[$this->TableName][] = $numberPage;
+        $this->numberPage[$this->getTableName()][] = $numberPage;
         return $this;
     }
 
@@ -2547,12 +2698,12 @@ abstract class ThaiInterface
     public function setCurrentPage(int $currentPage): ThaiInterface
     {
         if (!empty($this->getRequest()['CurrentPage'])) {
-            $this->currentPage[$this->TableName] = (int)$this->getRequest()['CurrentPage'];
+            $this->currentPage[$this->getTableName()] = (int)$this->getRequest()['CurrentPage'];
         } else {
-            $this->currentPage[$this->TableName] = $currentPage;
+            $this->currentPage[$this->getTableName()] = $currentPage;
         }
-        if (!empty($this->getLimit()[$this->TableName])) {
-            $this->setOffset((int)(($this->currentPage[$this->TableName] * $this->getLimit()[$this->TableName]) - $this->getLimit()[$this->TableName]));
+        if (!empty($this->getLimit()[$this->getTableName()])) {
+            $this->setOffset((int)(($this->currentPage[$this->getTableName()] * $this->getLimit()[$this->getTableName()]) - $this->getLimit()[$this->getTableName()]));
         }
         return $this;
     }
@@ -2581,18 +2732,18 @@ abstract class ThaiInterface
      */
     public function getRequest(): array
     {
-        if (!empty($this->Request[$this->TableName])) {
-            if (gettype($this->Request[$this->TableName]) === 'string') {
-                $this->Request[$this->TableName] = (array)json_decode($this->Request[$this->TableName]);
-                if (gettype($this->Request[$this->TableName]) === 'array') {
-                    foreach ($this->Request[$this->TableName] as $key => $value) {
+        if (!empty($this->Request[$this->getTableName()])) {
+            if (gettype($this->Request[$this->getTableName()]) === 'string') {
+                $this->Request[$this->getTableName()] = (array)json_decode($this->Request[$this->getTableName()]);
+                if (gettype($this->Request[$this->getTableName()]) === 'array') {
+                    foreach ($this->Request[$this->getTableName()] as $key => $value) {
                         if (gettype($value) === 'object') {
-                            $this->Request[$this->TableName][$key] = (array)$value;
+                            $this->Request[$this->getTableName()][$key] = (array)$value;
                         }
                     }
                 }
             } else {
-                return $this->Request[$this->TableName];
+                return $this->Request[$this->getTableName()];
             }
         }
         return [];
@@ -2644,9 +2795,9 @@ abstract class ThaiInterface
             $Request['routestring'] = $Request['route'];
         }
         if (!empty($Request['data'])) {
-            $this->setDataRequest($this->TableName, $Request['data']);
+            $this->setDataRequest($this->getTableName(), $Request['data']);
         } else {
-            $this->setDataRequest($this->TableName, $Request);
+            $this->setDataRequest($this->getTableName(), $Request);
         }
         return $this;
     }
@@ -2902,7 +3053,7 @@ abstract class ThaiInterface
         if ($this->query("SELECT * FROM information_schema.tables WHERE TABLE_SCHEMA='" . $this->database . "' and TABLE_NAME='" . $this->getTableNameWhere() . "_history'")) {
             $arrValueList = [];
             $arrFieldList = [];
-            foreach ($this->Skeleton[$this->TableName] as $value) {
+            foreach ($this->Skeleton[$this->getTableName()] as $value) {
                 if ($value['fieldName'] != 'attachments') {
                     if ($value['fieldName'] != $this->getFieldsId()) {
                         $res = $this->getItemValue($data[$value['fieldName']], $value['fieldName']);
@@ -2936,7 +3087,7 @@ abstract class ThaiInterface
         $arrValueList = [];
         $arrFieldList = [];
 
-        foreach ($this->Skeleton[$this->TableName] as $value) {
+        foreach ($this->Skeleton[$this->getTableName()] as $value) {
             if ($value['fieldName'] != 'attachments') {
                 if ($value['fieldName'] != $this->getFieldsId()) {
                     if (!empty($data[$value['fieldName']])) {
@@ -2962,7 +3113,7 @@ abstract class ThaiInterface
             $this->setData('error', array_merge($this->getData('error'), [[
                 'method' => 'insertItem',
                 'data' => [],
-                'TableName' => $this->TableName,
+                'TableName' => $this->getTableName(),
                 'key' => '',
                 'msg' => $this->translated('Access denied'),
             ]]));
@@ -2984,24 +3135,31 @@ abstract class ThaiInterface
     {
         $tableSetArr = [];
         $id = (int)$data['id'];
-        foreach ($this->Skeleton[$this->TableName] as $value) {
+        $cacheItem = [];
+        foreach ($this->Skeleton[$this->getTableName()]  as $key => $value) {
             if ($value['fieldName'] != 'attachments') {
                 if ($value['fieldName'] != $this->getFieldsId()) {
                     if (!empty($data[$value['fieldName']])) {
                         $res = $this->getItemValue($data[$value['fieldName']], $value['fieldName']);
                         if ($res !== false) {
                             $tableSetArr[] = "" . $res[1] . "='" . $res[0] . "'";
+                            $cacheItem[$res[1]]=$res[0];
                         }
                     } else {
+                        $cacheItem[$value['fieldName']]='';
                         $tableSetArr[] = "" . $value['fieldName'] . "=''";
                     }
+                }else{
+                    $cacheItem[$value['fieldName']]=$id;
                 }
             } else {
                 if ($this->getAttachmentsStatus() && empty($data['attachments'])) {
                     $this->AttachmentsRemove($id);
+                    $cacheItem['attachments']='';
                     $tableSetArr[] = "attachments=''";
                 } else {
                     if (!empty($data[$value['fieldName']])) {
+                        $cacheItem[$value['fieldName']]=$this->attachmentsArrayToString($data[$value['fieldName']]);
                         $tableSetArr[] = "" . $value['fieldName'] . "='" . $this->attachmentsArrayToString($data[$value['fieldName']]) . "'";
                     }
                 }
@@ -3013,7 +3171,7 @@ abstract class ThaiInterface
             $this->setData('error', array_merge($this->getData('error'), [[
                 'method' => 'insertItem',
                 'data' => [],
-                'TableName' => $this->TableName,
+                'TableName' => $this->getTableName(),
                 'key' => '',
                 'msg' => $this->translated('Access denied'),
             ]]));
@@ -3021,6 +3179,9 @@ abstract class ThaiInterface
         } else {
             if ($Permission === true) {
                 $this->query("UPDATE " . $this->getTableNameWhere() . " SET " . implode(",", $tableSetArr) . " WHERE " . $this->getTableNameWhere() . "." . $this->getFieldsId() . " = '" . $id . "'");
+                $CacheAdapter = $this->getConfig()->getCacheAdapterRedis();
+                $CacheAdapter->delete('item-by-id-'.$this->getTableNameWhere().'-'.$id);
+                $CacheAdapter->delete('item-by-user-id-'.$this->getTableName().'-'.$data['userid']);
                 return [
                     $id,
                     $this->insertItemHistory($data)
@@ -3031,6 +3192,9 @@ abstract class ThaiInterface
         $this->lastID = $id;
         if (!empty($this->query("SELECT * FROM " . $this->getTableNameWhere() . " WHERE " . $this->getTableNameWhere() . "." . $this->getFieldsWhere() . " = '" . $this->getUserId() . "' AND " . $this->getTableNameWhere() . "." . $this->getFieldsId() . " = '" . $id . "'"))) {
             $this->query("UPDATE " . $this->getTableNameWhere() . " SET " . implode(",", $tableSetArr) . " WHERE " . $this->getTableNameWhere() . "." . $this->getFieldsWhere() . " = '" . $this->getUserId() . "' AND " . $this->getTableNameWhere() . "." . $this->getFieldsId() . " = '" . $id . "'");
+            $CacheAdapter = $this->getConfig()->getCacheAdapterRedis();
+            $CacheAdapter->delete('item-by-id-'.$this->getTableNameWhere().'-'.$id);
+            $CacheAdapter->delete('item-by-user-id-'.$this->getTableName().'-'.$data['userid']);
             return [
                 $id,
                 $this->insertItemHistory($data)
@@ -3129,7 +3293,7 @@ abstract class ThaiInterface
         $id = 0;
         $tableSet = '';
 
-        foreach ($this->Skeleton[$this->TableName] as $value) {
+        foreach ($this->Skeleton[$this->getTableName()] as $value) {
             if ($value['fieldName'] != 'attachments') {
                 if ($value['fieldName'] === $this->getFieldsId()) {
                     $id = $this->getRequest()[$value['fieldName']];
@@ -3200,7 +3364,7 @@ abstract class ThaiInterface
         $id = 0;
         $tableSet = '';
 
-        foreach ($this->Skeleton[$this->TableName] as $value) {
+        foreach ($this->Skeleton[$this->getTableName()] as $value) {
             if ($value['fieldName'] != 'attachments') {
                 if ($value['fieldName'] === $this->getFieldsId()) {
                     $id = $this->getRequest()[$value['fieldName']];
@@ -3426,8 +3590,8 @@ abstract class ThaiInterface
             'routeParam' => $this->getRouteParam(),
             'AccessDenied'=>$this->translated('Access denied'),
             'requiredMesg'=>$this->translated('This field is required'),
-            'AutoSearchTmp' => (count($this->getAutoSearch()) === 0) ? [$this->TableName => 0] : $this->getAutoSearch(),
-            'checkSum' => ($this->getCheckSum()) ? [$this->TableName => 'CheckSum-Not-Info'] : $this->getCheckSum()
+            'AutoSearchTmp' => (count($this->getAutoSearch()) === 0) ? [$this->getTableName() => 0] : $this->getAutoSearch(),
+            'checkSum' => ($this->getCheckSum()) ? [$this->getTableName() => 'CheckSum-Not-Info'] : $this->getCheckSum()
         ];
     }
 
@@ -3460,8 +3624,8 @@ abstract class ThaiInterface
             'Debug' => $this->getDebug(),
             'ClassAction' => $this->ClassAction,
             'routeParam' => $this->getRouteParam(),
-            'AutoSearch' => (count($this->getAutoSearch()) === 0) ? [$this->TableName => 0] : $this->getAutoSearch(),
-            'checkSum' => ($this->getCheckSum()) ? [$this->TableName => 'CheckSum-Not-Info'] : $this->getCheckSum()
+            'AutoSearch' => (count($this->getAutoSearch()) === 0) ? [$this->getTableName() => 0] : $this->getAutoSearch(),
+            'checkSum' => ($this->getCheckSum()) ? [$this->getTableName() => 'CheckSum-Not-Info'] : $this->getCheckSum()
         ];
     }
 
@@ -3482,7 +3646,7 @@ abstract class ThaiInterface
             'sortOrder' => $this->getsortOrder(),
             'NumberPage' => $this->getNumberPage(),
             'CurrentPage' => $this->getCurrentPage(),
-            'checkSum' => ($this->getCheckSum()) ? [$this->TableName => 'CheckSum-Not-Info'] : $this->getCheckSum()
+            'checkSum' => ($this->getCheckSum()) ? [$this->getTableName() => 'CheckSum-Not-Info'] : $this->getCheckSum()
         ];
     }
 
@@ -3675,7 +3839,7 @@ abstract class ThaiInterface
      */
     public function getTableNameWhere(): string
     {
-        return $this->TableNameWhere ?: $this->TableName;
+        return $this->TableNameWhere ?: $this->getTableName();
     }
 
     /**
@@ -3804,7 +3968,7 @@ abstract class ThaiInterface
                     )
                 )
             );
-            $this->setData($key ?: $this->TableName, $arr);
+            $this->setData($key ?: $this->getTableName(), $arr);
         }
         return $this;
     }

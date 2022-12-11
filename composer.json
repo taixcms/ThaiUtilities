@@ -13,6 +13,8 @@
     "ext-json": "*",
     "textalk/websocket": "^1.5",
     "assetic/framework": "^3.0",
+    "doctrine/annotations": "*",
+    "doctrine/orm": "*",
     "wikimedia/minify": "^2.3",
     "scssphp/scssphp": "^1.10",
     "leafo/lessphp": "^0.5.0",

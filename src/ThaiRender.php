@@ -1,6 +1,7 @@
 <?php
 namespace ThaiUtilities;
 use \Exception;
+use Symfony\Contracts\Cache\ItemInterface;
 
 
 /**
@@ -55,198 +56,207 @@ class ThaiRender
         }));
         $this::$Twig->addFilter(new \Twig\TwigFilter('assetic', function ($string) {
 
-            $dirAsset =  'projects'.'/'.$_SERVER['HTTP_HOST'].'/asset';
-            $pattern  = "/((@import\s+[\"'`]([\w:?=@&\/#._;-]+)[\"'`];)|";
-            $pattern .= "(:\s*url\s*\([\s\"'`]*([\w:?=@&\/#._;-]+)";
-            $pattern .= "([\s\"'`]*\))|<[^>]*\s+(src|href|url)\=[\s\"'`]*";
-            $pattern .= "([\w:?=@&\/#._;-]+)[\s\"'`]*[^>]*>))/i";
+            $CacheAdapter = $this::$Config->getCacheAdapterRedis();
+            $resultHTML = $CacheAdapter->get('assetic-'.md5($string), function (ItemInterface $item) use( $string ) {
+                $item->expiresAfter(3600);
+                $dirAsset =  'projects'.'/'.$_SERVER['HTTP_HOST'].'/asset';
+                $pattern  = "/((@import\s+[\"'`]([\w:?=@&\/#._;-]+)[\"'`];)|";
+                $pattern .= "(:\s*url\s*\([\s\"'`]*([\w:?=@&\/#._;-]+)";
+                $pattern .= "([\s\"'`]*\))|<[^>]*\s+(src|href|url)\=[\s\"'`]*";
+                $pattern .= "([\w:?=@&\/#._;-]+)[\s\"'`]*[^>]*>))/i";
+                preg_match_all($pattern,$string,$matches);
+                if(!empty($matches[8]) && count($matches[8])>=1){
+                    $AssetFiles = [
+                        'css'=>array(),
+                        'js'=>array(),
+                        'cssName'=>'',
+                        'jsName'=>'',
+                        'htmlName'=>''
+                    ];
+                    $resultHTML = '';
 
-            preg_match_all($pattern,$string,$matches);
-
-            if(!empty($matches[8]) && count($matches[8])>=1){
-                $AssetFiles = [
-                    'css'=>array(),
-                    'js'=>array(),
-                    'cssName'=>'',
-                    'jsName'=>'',
-                    'htmlName'=>''
-                ];
-                $resultHTML = '';
-
-                foreach ($matches[8] as $link){
-                    if (mb_strpos($link, '/') !== false && mb_strpos($link, '/') === 0) {
-                        $link= mb_substr( $link, 1, strlen($link) ) ;
-                    }
-                    if(file_exists($link)){
-                        if(pathinfo($link, PATHINFO_EXTENSION) === 'css'){
-                            $AssetFiles['cssName'].=$link;
-                        }
-                        if(pathinfo($link, PATHINFO_EXTENSION) === 'scss'){
-                            $AssetFiles['cssName'].=$link;
-                        }
-                        if(pathinfo($link, PATHINFO_EXTENSION) === 'less'){
-                            $AssetFiles['cssName'].=$link;
-                        }
-                        if(pathinfo($link, PATHINFO_EXTENSION) === 'js'){
-                            $AssetFiles['jsName'].=$link;
-                        }
-                        if(pathinfo($link, PATHINFO_EXTENSION) === 'twig'){
-                            $AssetFiles['htmlName'].=$link;
-                        }
-                    }
-                }
-
-                //<script type="text/html" src="/projects/{{ ExtraData.domain }}/twig/components/calendar.html"></script>
-
-                if((!file_exists($dirAsset.'/cache/'.md5($AssetFiles['htmlName']).'.html')  || !$this::$Config->getTwigCacheEnabled()) && $AssetFiles['htmlName'] != ''  ){
-
-                    foreach ($matches[8] as $link){
-                        if (mb_strpos($link, '/') !== false && mb_strpos($link, '/') === 0) {
-                            $link= mb_substr( $link, 1, strlen($link) ) ;
-                        }
-                        if(file_exists($link)){
-                            if(pathinfo($link, PATHINFO_EXTENSION) === 'twig'){
-                                $HandlebarsFilter = new \Assetic\Filter\CallablesFilter();
-                                $AssetFiles['html'][] = new \Assetic\Asset\FileAsset($link,array($HandlebarsFilter));
-                            }
-                        }
-                    }
-
-                    if(count($AssetFiles['html'])>=1){
-                        $js = new \Assetic\Asset\AssetCollection($AssetFiles['html']);
-                        if (!file_exists($dirAsset)) {
-                            mkdir($dirAsset, 0777, true);
-                        }
-                        if (!file_exists($dirAsset.'/cache/')) {
-                            mkdir($dirAsset.'/cache/', 0777, true);
-                        }
-                        @unlink($dirAsset.'/cache/'.md5($AssetFiles['htmlName']).'.html');
-                        file_put_contents($dirAsset.'/cache/'.md5($AssetFiles['htmlName']).'.html',str_replace('app_loader_','app_loader_asset_',$js->dump()));
-                    }
-                }
-
-
-                if((!file_exists($dirAsset.'/cache/'.md5($AssetFiles['jsName']).'.js') || !$this::$Config->getTwigCacheEnabled()) && $AssetFiles['jsName'] != '' ){
-                    foreach ($matches[8] as $link){
-                        if (mb_strpos($link, '/') !== false && mb_strpos($link, '/') === 0) {
-                            $link= mb_substr( $link, 1, strlen($link) ) ;
-                        }
-                        if(file_exists($link)){
-                            if(pathinfo($link, PATHINFO_EXTENSION) === 'js'){
-                                $jsMinifier = new \Assetic\Filter\JavaScriptMinifierFilter();
-                                $AssetFiles['js'][] = new \Assetic\Asset\FileAsset($link,array($jsMinifier));
-                            }
-                        }
-                    }
-                    if(count($AssetFiles['js'])>=1){
-                        $js = new \Assetic\Asset\AssetCollection($AssetFiles['js']);
-                        if (!file_exists($dirAsset)) {
-                            mkdir($dirAsset, 0777, true);
-                        }
-                        if (!file_exists($dirAsset.'/cache/')) {
-                            mkdir($dirAsset.'/cache/', 0777, true);
-                        }
-                        @unlink($dirAsset.'/cache/'.md5($AssetFiles['jsName']).'.js');
-                        file_put_contents($dirAsset.'/cache/'.md5($AssetFiles['jsName']).'.js',$js->dump());
-                    }
-                }
-
-                if((!file_exists($dirAsset.'/cache/'.md5($AssetFiles['cssName']).'.css') || !$this::$Config->getTwigCacheEnabled()) && $AssetFiles['cssName'] !='' ){
                     foreach ($matches[8] as $link){
                         if (mb_strpos($link, '/') !== false && mb_strpos($link, '/') === 0) {
                             $link= mb_substr( $link, 1, strlen($link) ) ;
                         }
                         if(file_exists($link)){
                             if(pathinfo($link, PATHINFO_EXTENSION) === 'css'){
-                                $CSSMinFilter = new \Assetic\Filter\CSSMinFilter();
-                                //$StylesheetMinifyFilter = new Assetic\Filter\StylesheetMinifyFilter();
-                                $PhpCssEmbedFilter = new \Assetic\Filter\PhpCssEmbedFilter();
-                                $AssetFiles['css'][] = new \Assetic\Asset\FileAsset($link,array($CSSMinFilter,$PhpCssEmbedFilter));
+                                $AssetFiles['cssName'].=$link;
                             }
                             if(pathinfo($link, PATHINFO_EXTENSION) === 'scss'){
-                                $ScssphpFilter = new \Assetic\Filter\ScssphpFilter();
-                                //$StylesheetMinifyFilter = new Assetic\Filter\StylesheetMinifyFilter();
-                                $PhpCssEmbedFilter = new \Assetic\Filter\PhpCssEmbedFilter();
-                                $CSSMinFilter = new \Assetic\Filter\CSSMinFilter();
-                                $AssetFiles['css'][] = new \Assetic\Asset\FileAsset($link,array($ScssphpFilter,$PhpCssEmbedFilter,$CSSMinFilter));
+                                $AssetFiles['cssName'].=$link;
                             }
                             if(pathinfo($link, PATHINFO_EXTENSION) === 'less'){
-                                $LessphpFilter = new \Assetic\Filter\LessphpFilter();
-                                //$StylesheetMinifyFilter = new Assetic\Filter\StylesheetMinifyFilter();
-                                $PhpCssEmbedFilter = new \Assetic\Filter\PhpCssEmbedFilter();
-                                $CSSMinFilter = new \Assetic\Filter\CSSMinFilter();
-                                $AssetFiles['css'][] = new \Assetic\Asset\FileAsset($link,array($LessphpFilter,$PhpCssEmbedFilter,$CSSMinFilter));
+                                $AssetFiles['cssName'].=$link;
+                            }
+                            if(pathinfo($link, PATHINFO_EXTENSION) === 'js'){
+                                $AssetFiles['jsName'].=$link;
+                            }
+                            if(pathinfo($link, PATHINFO_EXTENSION) === 'twig'){
+                                $AssetFiles['htmlName'].=$link;
                             }
                         }
                     }
-                    if(count($AssetFiles['css'])>=1){
-                        $css = new \Assetic\Asset\AssetCollection($AssetFiles['css']);
-                        if (!file_exists($dirAsset)) {
-                            mkdir($dirAsset, 0777, true);
-                        }
-                        if (!file_exists($dirAsset.'/cache/')) {
-                            mkdir($dirAsset.'/cache/', 0777, true);
-                        }
-                        @unlink($dirAsset.'/cache/'.md5($AssetFiles['cssName']).'.css');
-                        file_put_contents($dirAsset.'/cache/'.md5($AssetFiles['cssName']).'.css',$css->dump());
-                    }
-                }
 
-                if($AssetFiles['jsName'] != ''){
-                    $resultHTML.='
-    <script type="text/javascript" src="/'.$dirAsset.'/cache/'.md5($AssetFiles['jsName']).'.js'.(($this::$Config->getTwigCacheEnabled())?'':'?v='.rand(500, 99999999)).'"></script>';
-                }
-                if($AssetFiles['cssName'] !=''){
-                    $resultHTML.='
-    <link type="text/css" rel="stylesheet" href="/'.$dirAsset.'/cache/'.md5($AssetFiles['cssName']).'.css'.(($this::$Config->getTwigCacheEnabled())?'':'?v='.rand(500, 99999999)).'">
+                    //<script type="text/html" src="/projects/{{ ExtraData.domain }}/twig/components/calendar.html"></script>
+
+                    if((!file_exists($dirAsset.'/cache/'.md5($AssetFiles['htmlName']).'.html')  || !$this::$Config->getAsseticCacheEnabled()) && $AssetFiles['htmlName'] != ''  ){
+
+                        foreach ($matches[8] as $link){
+                            if (mb_strpos($link, '/') !== false && mb_strpos($link, '/') === 0) {
+                                $link= mb_substr( $link, 1, strlen($link) ) ;
+                            }
+                            if(file_exists($link)){
+                                if(pathinfo($link, PATHINFO_EXTENSION) === 'twig'){
+                                    $HandlebarsFilter = new \Assetic\Filter\CallablesFilter();
+                                    $AssetFiles['html'][] = new \Assetic\Asset\FileAsset($link,array($HandlebarsFilter));
+                                }
+                            }
+                        }
+
+                        if(count($AssetFiles['html'])>=1){
+                            $js = new \Assetic\Asset\AssetCollection($AssetFiles['html']);
+                            if (!file_exists($dirAsset)) {
+                                mkdir($dirAsset, 0777, true);
+                            }
+                            if (!file_exists($dirAsset.'/cache/')) {
+                                mkdir($dirAsset.'/cache/', 0777, true);
+                            }
+                            @unlink($dirAsset.'/cache/'.md5($AssetFiles['htmlName']).'.html');
+                            file_put_contents($dirAsset.'/cache/'.md5($AssetFiles['htmlName']).'.html',str_replace('app_loader_','app_loader_asset_',$js->dump()));
+                        }
+                    }
+
+
+                    if((!file_exists($dirAsset.'/cache/'.md5($AssetFiles['jsName']).'.js') || !$this::$Config->getAsseticCacheEnabled()) && $AssetFiles['jsName'] != '' ){
+                        foreach ($matches[8] as $link){
+                            if (mb_strpos($link, '/') !== false && mb_strpos($link, '/') === 0) {
+                                $link= mb_substr( $link, 1, strlen($link) ) ;
+                            }
+                            if(file_exists($link)){
+                                if(pathinfo($link, PATHINFO_EXTENSION) === 'js'){
+                                    $jsMinifier = new \Assetic\Filter\JavaScriptMinifierFilter();
+                                    $AssetFiles['js'][] = new \Assetic\Asset\FileAsset($link,array($jsMinifier));
+                                }
+                            }
+                        }
+                        if(count($AssetFiles['js'])>=1){
+                            $js = new \Assetic\Asset\AssetCollection($AssetFiles['js']);
+                            if (!file_exists($dirAsset)) {
+                                mkdir($dirAsset, 0777, true);
+                            }
+                            if (!file_exists($dirAsset.'/cache/')) {
+                                mkdir($dirAsset.'/cache/', 0777, true);
+                            }
+                            @unlink($dirAsset.'/cache/'.md5($AssetFiles['jsName']).'.js');
+                            file_put_contents($dirAsset.'/cache/'.md5($AssetFiles['jsName']).'.js',$js->dump());
+                        }
+                    }
+
+                    if((!file_exists($dirAsset.'/cache/'.md5($AssetFiles['cssName']).'.css') || !$this::$Config->getAsseticCacheEnabled()) && $AssetFiles['cssName'] !='' ){
+                        foreach ($matches[8] as $link){
+                            if (mb_strpos($link, '/') !== false && mb_strpos($link, '/') === 0) {
+                                $link= mb_substr( $link, 1, strlen($link) ) ;
+                            }
+                            if(file_exists($link)){
+                                if(pathinfo($link, PATHINFO_EXTENSION) === 'css'){
+                                    $CSSMinFilter = new \Assetic\Filter\CSSMinFilter();
+                                    //$StylesheetMinifyFilter = new Assetic\Filter\StylesheetMinifyFilter();
+                                    $PhpCssEmbedFilter = new \Assetic\Filter\PhpCssEmbedFilter();
+                                    $AssetFiles['css'][] = new \Assetic\Asset\FileAsset($link,array($CSSMinFilter,$PhpCssEmbedFilter));
+                                }
+                                if(pathinfo($link, PATHINFO_EXTENSION) === 'scss'){
+                                    $ScssphpFilter = new \Assetic\Filter\ScssphpFilter();
+                                    //$StylesheetMinifyFilter = new Assetic\Filter\StylesheetMinifyFilter();
+                                    $PhpCssEmbedFilter = new \Assetic\Filter\PhpCssEmbedFilter();
+                                    $CSSMinFilter = new \Assetic\Filter\CSSMinFilter();
+                                    $AssetFiles['css'][] = new \Assetic\Asset\FileAsset($link,array($ScssphpFilter,$PhpCssEmbedFilter,$CSSMinFilter));
+                                }
+                                if(pathinfo($link, PATHINFO_EXTENSION) === 'less'){
+                                    $LessphpFilter = new \Assetic\Filter\LessphpFilter();
+                                    //$StylesheetMinifyFilter = new Assetic\Filter\StylesheetMinifyFilter();
+                                    $PhpCssEmbedFilter = new \Assetic\Filter\PhpCssEmbedFilter();
+                                    $CSSMinFilter = new \Assetic\Filter\CSSMinFilter();
+                                    $AssetFiles['css'][] = new \Assetic\Asset\FileAsset($link,array($LessphpFilter,$PhpCssEmbedFilter,$CSSMinFilter));
+                                }
+                            }
+                        }
+                        if(count($AssetFiles['css'])>=1){
+                            $css = new \Assetic\Asset\AssetCollection($AssetFiles['css']);
+                            if (!file_exists($dirAsset)) {
+                                mkdir($dirAsset, 0777, true);
+                            }
+                            if (!file_exists($dirAsset.'/cache/')) {
+                                mkdir($dirAsset.'/cache/', 0777, true);
+                            }
+                            @unlink($dirAsset.'/cache/'.md5($AssetFiles['cssName']).'.css');
+                            file_put_contents($dirAsset.'/cache/'.md5($AssetFiles['cssName']).'.css',$css->dump());
+                        }
+                    }
+
+                    if($AssetFiles['jsName'] != ''){
+                        $resultHTML.='
+    <script type="text/javascript" src="/'.$dirAsset.'/cache/'.md5($AssetFiles['jsName']).'.js'.(($this::$Config->getAsseticCacheEnabled())?'':'?v='.rand(500, 99999999)).'"></script>';
+                    }
+                    if($AssetFiles['cssName'] !=''){
+                        $resultHTML.='
+    <link type="text/css" rel="stylesheet" href="/'.$dirAsset.'/cache/'.md5($AssetFiles['cssName']).'.css'.(($this::$Config->getAsseticCacheEnabled())?'':'?v='.rand(500, 99999999)).'">
                             ';
-                }
-                if($AssetFiles['htmlName'] !=''){
-                    $resultHTML.="
+                    }
+                    if($AssetFiles['htmlName'] !=''){
+                        $resultHTML.="
                 <script>$.ajax({ url:'/".$dirAsset."/cache/".md5($AssetFiles['htmlName']).".html' ,type: 'GET',async: true,success: function (data) { $('#loadPrev').append(data); }});</script>
                             ";
+                    }
                 }
-            }
+                return $resultHTML;
+            });
+
             return $resultHTML;
         }));
         $this::$Twig->addFilter(new \Twig\TwigFilter('trans', function ($string) {
 
-            $file = $_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.'projects'.DIRECTORY_SEPARATOR.$_SERVER['HTTP_HOST'].DIRECTORY_SEPARATOR.$this::$Config->getTransDir().DIRECTORY_SEPARATOR.$this::$Config->getUserLng().'_'.mb_strtoupper($this::$Config->getUserLng()).DIRECTORY_SEPARATOR.$this::$ClassName .'.po';
-
-            $newText = null;
-            if(file_exists($_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.'projects'.DIRECTORY_SEPARATOR.$_SERVER['HTTP_HOST'].DIRECTORY_SEPARATOR.$this::$Config->getTransDir())){
-                if(!empty(self::$translator[$this::$ClassName])){
-                    $translator = self::$translator[$this::$ClassName];
-                }else {
-                    $translator = new \Symfony\Component\Translation\Translator($this::$Config->getUserLng() . '_' . mb_strtoupper($this::$Config->getUserLng()));
-                    $translator->addLoader('po', new \Symfony\Component\Translation\Loader\PoFileLoader());
-                    $finder = new \Symfony\Component\Finder\Finder();
-                    $poFiles = $finder->files()->in($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'projects' . DIRECTORY_SEPARATOR . $_SERVER['HTTP_HOST'] . DIRECTORY_SEPARATOR . $this::$Config->getTransDir() . DIRECTORY_SEPARATOR . '*')->name('GeneralUI.po')->name($this::$ClassName . '.po');
-                    foreach ($poFiles->getIterator() as $oneFile) {
-                        $pp = explode(DIRECTORY_SEPARATOR, $oneFile->getPath());
-                        $locale = array_pop($pp);
-                        $fp = explode('.', $oneFile->getFilename());
-                        $domain = count($fp) === 3 ? $fp[1] : 'messages';
-                        $translator->addResource('po',
-                            $oneFile->getPath() . DIRECTORY_SEPARATOR . $oneFile->getFilename(),
-                            $locale,
-                            $domain);
-                    }
-                }
-                self::$translator[$this::$ClassName] = $translator;
-                $newText = $translator->trans($string);
+            if($this::$Config->getUserLng()==='en'){
+                return $string;
             }
 
-            if(!file_exists($file) && $this::$Config->isTransCreateROfile()){
+            $CacheAdapter = $this::$Config->getCacheAdapterRedis();
+            $translateText = $CacheAdapter->get('trans-'.$this::$Config->getUserLng().'-'.$_SERVER['HTTP_HOST'].'-'.md5($string), function (ItemInterface $item) use( $string ) {
+                $item->expiresAfter(3600);
+                $file = $_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.'projects'.DIRECTORY_SEPARATOR.$_SERVER['HTTP_HOST'].DIRECTORY_SEPARATOR.$this::$Config->getTransDir().DIRECTORY_SEPARATOR.$this::$Config->getUserLng().'_'.mb_strtoupper($this::$Config->getUserLng()).DIRECTORY_SEPARATOR.$this::$ClassName .'.po';
+                $newText = null;
+                if(file_exists($_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.'projects'.DIRECTORY_SEPARATOR.$_SERVER['HTTP_HOST'].DIRECTORY_SEPARATOR.$this::$Config->getTransDir())){
+                    if(!empty(self::$translator[$this::$ClassName])){
+                        $translator = self::$translator[$this::$ClassName];
+                    }else {
+                        $translator = new \Symfony\Component\Translation\Translator($this::$Config->getUserLng() . '_' . mb_strtoupper($this::$Config->getUserLng()));
+                        $translator->addLoader('po', new \Symfony\Component\Translation\Loader\PoFileLoader());
+                        $finder = new \Symfony\Component\Finder\Finder();
+                        $poFiles = $finder->files()->in($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'projects' . DIRECTORY_SEPARATOR . $_SERVER['HTTP_HOST'] . DIRECTORY_SEPARATOR . $this::$Config->getTransDir() . DIRECTORY_SEPARATOR . '*')->name('GeneralUI.po')->name($this::$ClassName . '.po');
+                        foreach ($poFiles->getIterator() as $oneFile) {
+                            $pp = explode(DIRECTORY_SEPARATOR, $oneFile->getPath());
+                            $locale = array_pop($pp);
+                            $fp = explode('.', $oneFile->getFilename());
+                            $domain = count($fp) === 3 ? $fp[1] : 'messages';
+                            $translator->addResource('po',
+                                $oneFile->getPath() . DIRECTORY_SEPARATOR . $oneFile->getFilename(),
+                                $locale,
+                                $domain);
+                        }
+                    }
+                    self::$translator[$this::$ClassName] = $translator;
+                    $newText = $translator->trans($string);
+                }
+                if(!file_exists($file) && $this::$Config->isTransCreateROfile()){
 
-                if (!file_exists($_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.'projects'.DIRECTORY_SEPARATOR.$_SERVER['HTTP_HOST'].DIRECTORY_SEPARATOR.$this::$Config->getTransDir())) {
-                    mkdir($_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.'projects'.DIRECTORY_SEPARATOR.$_SERVER['HTTP_HOST'].DIRECTORY_SEPARATOR.$this::$Config->getTransDir(), 0777, true);
-                }
-                if (!file_exists($_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.'projects'.DIRECTORY_SEPARATOR.$_SERVER['HTTP_HOST'].DIRECTORY_SEPARATOR.$this::$Config->getTransDir().DIRECTORY_SEPARATOR.$this::$Config->getUserLng().'_'.mb_strtoupper($this::$Config->getUserLng()))) {
-                    mkdir($_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.'projects'.DIRECTORY_SEPARATOR.$_SERVER['HTTP_HOST'].DIRECTORY_SEPARATOR.$this::$Config->getTransDir().DIRECTORY_SEPARATOR.$this::$Config->getUserLng().'_'.mb_strtoupper($this::$Config->getUserLng()), 0777, true);
-                }
-                if (!file_exists($file)) {
-                    file_put_contents($file, 'msgid ""
+                    if (!file_exists($_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.'projects'.DIRECTORY_SEPARATOR.$_SERVER['HTTP_HOST'].DIRECTORY_SEPARATOR.$this::$Config->getTransDir())) {
+                        mkdir($_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.'projects'.DIRECTORY_SEPARATOR.$_SERVER['HTTP_HOST'].DIRECTORY_SEPARATOR.$this::$Config->getTransDir(), 0777, true);
+                    }
+                    if (!file_exists($_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.'projects'.DIRECTORY_SEPARATOR.$_SERVER['HTTP_HOST'].DIRECTORY_SEPARATOR.$this::$Config->getTransDir().DIRECTORY_SEPARATOR.$this::$Config->getUserLng().'_'.mb_strtoupper($this::$Config->getUserLng()))) {
+                        mkdir($_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.'projects'.DIRECTORY_SEPARATOR.$_SERVER['HTTP_HOST'].DIRECTORY_SEPARATOR.$this::$Config->getTransDir().DIRECTORY_SEPARATOR.$this::$Config->getUserLng().'_'.mb_strtoupper($this::$Config->getUserLng()), 0777, true);
+                    }
+                    if (!file_exists($file)) {
+                        file_put_contents($file, 'msgid ""
 msgstr ""
 "Project-Id-Version: taix\n"
 "POT-Creation-Date: '.date("Y-m-d H:i:s").'+0300\n"
@@ -266,39 +276,41 @@ msgstr ""
 "X-Poedit-SearchPathExcluded-0: twig/*.twig\n"
                             
                             ', FILE_APPEND);
+                    }
                 }
-            }
+                if(($newText === ''|| $newText === $string) && $this::$Config->getUserLng()!=='en' ){
+                    $translated = $this::$Config->translate($string, 'en', $this::$Config->getUserLng(), 'text');
+                    if ($translated == "0") $translated = "";
+                    $translated = str_replace("'","",$translated);
+                    if ($translated == '') $translated = $string;
 
-            if(($newText === ''|| $newText === $string) && $this::$Config->getUserLng()!=='en' ){
-                $translated = $this::$Config->translate($string, 'en', $this::$Config->getUserLng(), 'text');
-                if ($translated == "0") $translated = "";
-                $translated = str_replace("'","",$translated);
-                if ($translated == '') $translated = $string;
-
-if($this::$Config->isTransCreateROfile()){
-    $textRO = file_get_contents($file);
-    if(strpos($textRO,'"'.$string.'"') === false){
-        if($string !== $translated) {
-            $data = '
+                    if($this::$Config->isTransCreateROfile()){
+                        $textRO = file_get_contents($file);
+                        if(strpos($textRO,'"'.$string.'"') === false){
+                            if($string !== $translated) {
+                                $data = '
 msgid "' . $string . '"
 msgstr "' . $translated . '"
  ';
-        }
-        if($string === $translated){
-            $data ='
+                            }
+                            if($string === $translated){
+                                $data ='
  #TODO Automatic translation has been disabled
 msgid "'.$string.'"
 msgstr ""
  ';
-        }
-        file_put_contents($file, $data, FILE_APPEND);
-    }
-}
+                            }
+                            file_put_contents($file, $data, FILE_APPEND);
+                        }
+                    }
 
-                return $translated;
-            }else{
-                return $translator->trans($string);
-            }
+                    return $translated;
+                }else{
+                    return $translator->trans($string);
+                }
+            });
+
+            return $translateText;
         }));
         $this::$Twig->addFunction(new  \Twig\TwigFunction('checkPermission', function ($conditionParams,$conditionName) {
             return (new ThaiGettingClass($this::$Config))->getClass($this::$ClassName)->checkPermission($conditionParams,$conditionName);
