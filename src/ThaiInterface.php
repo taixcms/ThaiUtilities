@@ -2291,7 +2291,7 @@ abstract class ThaiInterface
             $Result = [];
             $arr = $qb->select( ['A'] )
                 ->from( $this->getEntityName(), 'A')
-                ->Where($qb->expr()->in('A.userid',':userid'))
+                ->Where($qb->expr()->in('A.'.$this->getFieldsWhere(),':userid'))
                 ->setParameter(':userid',$UserID)
                 ->getQuery()->getArrayResult();
             foreach ($this->ReformatRowsEntityes( $arr ) as $one) {
@@ -3123,28 +3123,28 @@ abstract class ThaiInterface
                             }else{
                                 if ($field['type'] === 'integer') {
                                     if(!empty($data[$field['columnName']])){
-                                        $Entity->{$method}((int)$data[$field['columnName']]);
+                                        $Entity->{$method}((int)$this->getItemValue($data[$field['columnName']], $field['columnName'])[0]);
                                     }else{
                                         $Entity->{$method}(0);
                                     }
                                 }
                                 if ($field['type'] === 'double') {
                                     if(!empty($data[$field['columnName']])){
-                                        $Entity->{$method}((int)$data[$field['columnName']]);
+                                        $Entity->{$method}((int)$this->getItemValue($data[$field['columnName']], $field['columnName'])[0]);
                                     }else{
                                         $Entity->{$method}(0);
                                     }
                                 }
                                 if ($field['type'] === 'decimal') {
                                     if(!empty($data[$field['columnName']])){
-                                        $Entity->{$method}((int)$data[$field['columnName']]);
+                                        $Entity->{$method}((int)$this->getItemValue($data[$field['columnName']], $field['columnName'])[0]);
                                     }else{
                                         $Entity->{$method}(0);
                                     }
                                 }
                                 if ($field['type'] === 'tinyint') {
                                     if(!empty($data[$field['columnName']])){
-                                        $Entity->{$method}((int)$data[$field['columnName']]);
+                                        $Entity->{$method}((int)$this->getItemValue($data[$field['columnName']], $field['columnName'])[0]);
                                     }else{
                                         $Entity->{$method}(0);
                                     }
@@ -3165,7 +3165,7 @@ abstract class ThaiInterface
                                 }
                                 if ($field['type'] === 'text') {
                                     if(!empty($data[$field['columnName']])){
-                                        $Entity->{$method}($data[$field['columnName']]);
+                                        $Entity->{$method}($this->getItemValue($data[$field['columnName']], $field['columnName'])[0]);
                                     }else{
                                         $Entity->{$method}('');
                                     }
@@ -3189,14 +3189,14 @@ abstract class ThaiInterface
                                 }
                                 if ($field['type'] === 'string') {
                                     if(!empty($data[$field['columnName']])){
-                                        $Entity->{$method}($data[$field['columnName']]);
+                                        $Entity->{$method}($this->getItemValue($data[$field['columnName']], $field['columnName'])[0]);
                                     }else{
                                         $Entity->{$method}('');
                                     }
                                 }
                                 if ($field['type'] === 'mediumtext') {
                                     if(!empty($data[$field['columnName']])){
-                                        $Entity->{$method}($data[$field['columnName']]);
+                                        $Entity->{$method}($this->getItemValue($data[$field['columnName']], $field['columnName'])[0]);
                                     }else{
                                         $Entity->{$method}('');
                                     }
@@ -3386,28 +3386,28 @@ abstract class ThaiInterface
                                     }else{
                                         if ($field['type'] === 'integer') {
                                             if(!empty($data[$field['columnName']])){
-                                                $Entity->{$method}((int)$this->getItemValue($data[$field['columnName']], $field['columnName'])[1]);
+                                                $Entity->{$method}((int)$this->getItemValue($data[$field['columnName']], $field['columnName'])[0]);
                                             }else{
                                                 $Entity->{$method}(0);
                                             }
                                         }
                                         if ($field['type'] === 'double') {
                                             if(!empty($data[$field['columnName']])){
-                                                $Entity->{$method}((int)$this->getItemValue($data[$field['columnName']], $field['columnName'])[1]);
+                                                $Entity->{$method}((int)$this->getItemValue($data[$field['columnName']], $field['columnName'])[0]);
                                             }else{
                                                 $Entity->{$method}(0);
                                             }
                                         }
                                         if ($field['type'] === 'decimal') {
                                             if(!empty($data[$field['columnName']])){
-                                                $Entity->{$method}((int)$this->getItemValue($data[$field['columnName']], $field['columnName'])[1]);
+                                                $Entity->{$method}((int)$this->getItemValue($data[$field['columnName']], $field['columnName'])[0]);
                                             }else{
                                                 $Entity->{$method}(0);
                                             }
                                         }
                                         if ($field['type'] === 'tinyint') {
                                             if(!empty($data[$field['columnName']])){
-                                                $Entity->{$method}((int)$this->getItemValue($data[$field['columnName']], $field['columnName'])[1]);
+                                                $Entity->{$method}((int)$this->getItemValue($data[$field['columnName']], $field['columnName'])[0]);
                                             }else{
                                                 $Entity->{$method}(0);
                                             }
@@ -3421,14 +3421,14 @@ abstract class ThaiInterface
                                         }
                                         if ($field['type'] === 'varchar') {
                                             if(!empty($data[$field['columnName']])){
-                                                $Entity->{$method}($this->getItemValue($data[$field['columnName']], $field['columnName'])[1]);
+                                                $Entity->{$method}($this->getItemValue($data[$field['columnName']], $field['columnName'])[0]);
                                             }else{
                                                 $Entity->{$method}('');
                                             }
                                         }
                                         if ($field['type'] === 'text') {
                                             if(!empty($data[$field['columnName']])){
-                                                $Entity->{$method}($this->getItemValue($data[$field['columnName']], $field['columnName'])[1]);
+                                                $Entity->{$method}($this->getItemValue($data[$field['columnName']], $field['columnName'])[0]);
                                             }else{
                                                 $Entity->{$method}('');
                                             }
@@ -3452,14 +3452,14 @@ abstract class ThaiInterface
                                         }
                                         if ($field['type'] === 'string') {
                                             if(!empty($data[$field['columnName']])){
-                                                $Entity->{$method}($this->getItemValue($data[$field['columnName']], $field['columnName'])[1]);
+                                                $Entity->{$method}($this->getItemValue($data[$field['columnName']], $field['columnName'])[0]);
                                             }else{
                                                 $Entity->{$method}('');
                                             }
                                         }
                                         if ($field['type'] === 'mediumtext') {
                                             if(!empty($data[$field['columnName']])){
-                                                $Entity->{$method}($this->getItemValue($data[$field['columnName']], $field['columnName'])[1]);
+                                                $Entity->{$method}($this->getItemValue($data[$field['columnName']], $field['columnName'])[0]);
                                             }else{
                                                 $Entity->{$method}('');
                                             }
@@ -3506,28 +3506,28 @@ abstract class ThaiInterface
                                 }else{
                                     if ($field['type'] === 'integer') {
                                         if(!empty($data[$field['columnName']])){
-                                            $Entity->{$method}((int)$this->getItemValue($data[$field['columnName']], $field['columnName'])[1]);
+                                            $Entity->{$method}((int)$this->getItemValue($data[$field['columnName']], $field['columnName'])[0]);
                                         }else{
                                             $Entity->{$method}(0);
                                         }
                                     }
                                     if ($field['type'] === 'double') {
                                         if(!empty($data[$field['columnName']])){
-                                            $Entity->{$method}((int)$this->getItemValue($data[$field['columnName']], $field['columnName'])[1]);
+                                            $Entity->{$method}((int)$this->getItemValue($data[$field['columnName']], $field['columnName'])[0]);
                                         }else{
                                             $Entity->{$method}(0);
                                         }
                                     }
                                     if ($field['type'] === 'decimal') {
                                         if(!empty($data[$field['columnName']])){
-                                            $Entity->{$method}((int)$this->getItemValue($data[$field['columnName']], $field['columnName'])[1]);
+                                            $Entity->{$method}((int)$this->getItemValue($data[$field['columnName']], $field['columnName'])[0]);
                                         }else{
                                             $Entity->{$method}(0);
                                         }
                                     }
                                     if ($field['type'] === 'tinyint') {
                                         if(!empty($data[$field['columnName']])){
-                                            $Entity->{$method}((int)$this->getItemValue($data[$field['columnName']], $field['columnName'])[1]);
+                                            $Entity->{$method}((int)$this->getItemValue($data[$field['columnName']], $field['columnName'])[0]);
                                         }else{
                                             $Entity->{$method}(0);
                                         }
@@ -3541,14 +3541,14 @@ abstract class ThaiInterface
                                     }
                                     if ($field['type'] === 'varchar') {
                                         if(!empty($data[$field['columnName']])){
-                                            $Entity->{$method}($this->getItemValue($data[$field['columnName']], $field['columnName'])[1]);
+                                            $Entity->{$method}($this->getItemValue($data[$field['columnName']], $field['columnName'])[0]);
                                         }else{
                                             $Entity->{$method}('');
                                         }
                                     }
                                     if ($field['type'] === 'text') {
                                         if(!empty($data[$field['columnName']])){
-                                            $Entity->{$method}($this->getItemValue($data[$field['columnName']], $field['columnName'])[1]);
+                                            $Entity->{$method}($this->getItemValue($data[$field['columnName']], $field['columnName'])[0]);
                                         }else{
                                             $Entity->{$method}('');
                                         }
@@ -3572,14 +3572,14 @@ abstract class ThaiInterface
                                     }
                                     if ($field['type'] === 'string') {
                                         if(!empty($data[$field['columnName']])){
-                                            $Entity->{$method}($this->getItemValue($data[$field['columnName']], $field['columnName'])[1]);
+                                            $Entity->{$method}($this->getItemValue($data[$field['columnName']], $field['columnName'])[0]);
                                         }else{
                                             $Entity->{$method}('');
                                         }
                                     }
                                     if ($field['type'] === 'mediumtext') {
                                         if(!empty($data[$field['columnName']])){
-                                            $Entity->{$method}($this->getItemValue($data[$field['columnName']], $field['columnName'])[1]);
+                                            $Entity->{$method}($this->getItemValue($data[$field['columnName']], $field['columnName'])[0]);
                                         }else{
                                             $Entity->{$method}('');
                                         }
