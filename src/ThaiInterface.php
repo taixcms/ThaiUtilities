@@ -3596,7 +3596,7 @@ abstract class ThaiInterface
 
             $CacheAdapter = $this->getConfig()->getCacheAdapterRedis();
             $CacheAdapter->delete('item-by-id-'.$this->getTableNameWhere().'-'.$id);
-            $CacheAdapter->delete('item-by-user-id-'.$this->getTableName().'-'.$data['userid']);
+            $CacheAdapter->delete('item-by-user-id-'.$this->getTableName().'-'.$Entity->get_userid());
             return [
                 $id,
                 $this->insertItemHistory($data)
