@@ -3179,7 +3179,7 @@ abstract class ThaiInterface
                                 }
                                 if ($field['type'] === 'datetime') {
                                     if(!empty($data[$field['columnName']])){
-                                        $Entity->{$method}(trim((new DateTime())->setTimestamp($data[$field['columnName']])->format('Y-m-d')));
+                                        $Entity->{$method}(trim((new \DateTime())->setTimestamp($data[$field['columnName']])->format('Y-m-d')));
                                     }else{
                                         $Entity->{$method}('0000-00-00 00:00:00');
                                     }
