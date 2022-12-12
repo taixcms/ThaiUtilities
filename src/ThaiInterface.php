@@ -1245,7 +1245,7 @@ abstract class ThaiInterface
                     }
                 }
 
-                if (!empty($newArray['attachments'])) {
+                if (!empty($newArray[$key]['attachments'])) {
                     $newArray[$key]['attachments'] = $this->getAttachments($newArray[$key]['attachments']);
                 } else {
                     $newArray[$key]['attachments'] = [];
@@ -3093,6 +3093,7 @@ abstract class ThaiInterface
      */
     public function insertItem(array $data): ?array
     {
+        
         $arrValueList = [];
         $arrFieldList = [];
 
@@ -3142,6 +3143,7 @@ abstract class ThaiInterface
      */
     public function updateItem(array $data): ?array
     {
+
         $tableSetArr = [];
         $id = (int)$data['id'];
         $cacheItem = [];
@@ -3221,6 +3223,7 @@ abstract class ThaiInterface
         $data = $this->getSkeleton()
             ->getRequest();
         $data = $this->callbackBeforeSave($data);
+
         $id = (int)$data['id'];
         $r = [];
         if ($this->Connect) {
