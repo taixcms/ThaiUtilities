@@ -1,6 +1,5 @@
 <?php
 namespace ThaiUtilities;
-
 use \Exception;
 
 /**

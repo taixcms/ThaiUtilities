@@ -2990,14 +2990,14 @@ abstract class ThaiInterface
                 $id = (int)$data['id'];
                 if ($this->Connect) {
                     if ($id <= 0) {
-                        $r = $this->insertItem($data);
+                        $r = $this->insertItemEntity($data);
                         if ($r[0] >= 1) {
                             $m = ['success', 'Entry added'];
                         } else {
                             $m = ['error', 'Recording not possible'];
                         }
                     } else {
-                        $r = $this->updateItem($data);
+                        $r = $this->updateItemEntity($data);
                         if ($r[0] >= 1) {
                             $m = ['info', 'Saved successfully'];
                         } else {
@@ -3091,9 +3091,140 @@ abstract class ThaiInterface
      * @param array $data
      * @return array
      */
+    public function insertItemEntity(array $data): ?array
+    {
+        $Permission = $this->checkPermission($data, 'creat');
+        if ($Permission === false) {
+            $this->setData('error', array_merge($this->getData('error'), [[
+                'method' => 'insertItem',
+                'data' => [],
+                'TableName' => $this->getTableName(),
+                'key' => '',
+                'msg' => $this->translated('Access denied'),
+            ]]));
+            return [0, 0];
+        }
+
+        $className = $this->getEntityName();
+        $entityManager = $this->getConfig()->getEm();
+        $Entity = new $className();
+        $class = $this->getConfig()->getEm()->getMetadataFactory()->getMetadataFor($className);
+        foreach (get_class_methods($Entity) as $method) {
+            if($method!=='setId'){
+                if (strpos($method, 'set') === 0) {
+                    foreach ($class->fieldMappings as $field) {
+                        if ($field['fieldName']!=='id' && 'set_'.$field['columnName'] === $method) {
+                            if($field['columnName'] ==='attachments'){
+                                if(!empty($data[$field['columnName']])){
+                                    $Entity->{$method}( $this->attachmentsArrayToString($data[$field['columnName']]));
+                                }else{
+                                    $Entity->{$method}(0);
+                                }
+                            }else{
+                                if ($field['type'] === 'integer') {
+                                    if(!empty($data[$field['columnName']])){
+                                        $Entity->{$method}((int)$data[$field['columnName']]);
+                                    }else{
+                                        $Entity->{$method}(0);
+                                    }
+                                }
+                                if ($field['type'] === 'double') {
+                                    if(!empty($data[$field['columnName']])){
+                                        $Entity->{$method}((int)$data[$field['columnName']]);
+                                    }else{
+                                        $Entity->{$method}(0);
+                                    }
+                                }
+                                if ($field['type'] === 'decimal') {
+                                    if(!empty($data[$field['columnName']])){
+                                        $Entity->{$method}((int)$data[$field['columnName']]);
+                                    }else{
+                                        $Entity->{$method}(0);
+                                    }
+                                }
+                                if ($field['type'] === 'tinyint') {
+                                    if(!empty($data[$field['columnName']])){
+                                        $Entity->{$method}((int)$data[$field['columnName']]);
+                                    }else{
+                                        $Entity->{$method}(0);
+                                    }
+                                }
+                                if ($field['type'] === 'array') {
+                                    if(!empty($data[$field['columnName']])){
+                                        $Entity->{$method}(explode('|', $data[$field['columnName']]));
+                                    }else{
+                                        $Entity->{$method}('');
+                                    }
+                                }
+                                if ($field['type'] === 'varchar') {
+                                    if(!empty($data[$field['columnName']])){
+                                        $Entity->{$method}($data[$field['columnName']]);
+                                    }else{
+                                        $Entity->{$method}('');
+                                    }
+                                }
+                                if ($field['type'] === 'text') {
+                                    if(!empty($data[$field['columnName']])){
+                                        $Entity->{$method}($data[$field['columnName']]);
+                                    }else{
+                                        $Entity->{$method}('');
+                                    }
+                                }
+                                if ($field['type'] === 'date') {
+                                    if(!empty($data[$field['columnName']])){
+                                        $Entity->{$method}((new \DateTime($data[$field['columnName']])));
+                                    }else{
+                                        $Entity->{$method}('0000-00-00');
+                                    }
+                                }
+                                if ($field['type'] === 'datetime') {
+                                    if(!empty($data[$field['columnName']])){
+                                        $Entity->{$method}(date($data[$field['columnName']])->format('Y-m-d'));
+                                    }else{
+                                        $Entity->{$method}('0000-00-00 00:00:00');
+                                    }
+                                }
+                                if ($field['type'] === 'time') {
+
+                                }
+                                if ($field['type'] === 'string') {
+                                    if(!empty($data[$field['columnName']])){
+                                        $Entity->{$method}($data[$field['columnName']]);
+                                    }else{
+                                        $Entity->{$method}('');
+                                    }
+                                }
+                                if ($field['type'] === 'mediumtext') {
+                                    if(!empty($data[$field['columnName']])){
+                                        $Entity->{$method}($data[$field['columnName']]);
+                                    }else{
+                                        $Entity->{$method}('');
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        $entityManager->persist($Entity);
+        $entityManager->flush();
+        $entityManager->clear();
+        $CacheAdapter = $this->getConfig()->getCacheAdapterRedis();
+        $CacheAdapter->delete('item-by-user-id-'.$this->getTableName().'-'.$this->getUserId());
+        return [
+            $Entity->get_id(),
+            $this->insertItemHistory($data)
+        ];
+    }
+
+    /**
+     * @param array $data
+     * @return array
+     */
     public function insertItem(array $data): ?array
     {
-        
+
         $arrValueList = [];
         $arrFieldList = [];
 
@@ -3213,6 +3344,266 @@ abstract class ThaiInterface
         }
         return NULL;
     }
+    /**
+     * @param array $data
+     * @return array
+     * @throws Exception
+     */
+
+    public function updateItemEntity(array $data): ?array
+    {
+        $tableSetArr = [];
+        $id = (int)$data['id'];
+        $cacheItem = [];
+        $className = $this->getEntityName();
+        $entityManager = $this->getConfig()->getEm();
+        $Permission = $this->checkPermission($data, 'update');
+        if ($Permission === false) {
+            $this->setData('error', array_merge($this->getData('error'), [[
+                'method' => 'insertItem',
+                'data' => [],
+                'TableName' => $this->getTableName(),
+                'key' => '',
+                'msg' => $this->translated('Access denied'),
+            ]]));
+            return [0, 0];
+        } else {
+            if ($Permission === true) {
+
+                $Entity = $this->getConfig()->getEm()->getRepository($className)->find($id);
+                $class = $this->getConfig()->getEm()->getMetadataFactory()->getMetadataFor($className);
+                foreach (get_class_methods($Entity) as $method) {
+                    if($method!=='setId'){
+                        if (strpos($method, 'set') === 0) {
+                            foreach ($class->fieldMappings as $field) {
+                                if ($field['fieldName']!=='id' && 'set_'.$field['columnName'] === $method) {
+                                    if($field['columnName'] ==='attachments'){
+                                        if(!empty($data[$field['columnName']])){
+                                            $Entity->{$method}( $this->attachmentsArrayToString($data[$field['columnName']]));
+                                        }else{
+                                            $Entity->{$method}(0);
+                                        }
+                                    }else{
+                                        if ($field['type'] === 'integer') {
+                                            if(!empty($data[$field['columnName']])){
+                                                $Entity->{$method}((int)$data[$field['columnName']]);
+                                            }else{
+                                                $Entity->{$method}(0);
+                                            }
+                                        }
+                                        if ($field['type'] === 'double') {
+                                            if(!empty($data[$field['columnName']])){
+                                                $Entity->{$method}((int)$data[$field['columnName']]);
+                                            }else{
+                                                $Entity->{$method}(0);
+                                            }
+                                        }
+                                        if ($field['type'] === 'decimal') {
+                                            if(!empty($data[$field['columnName']])){
+                                                $Entity->{$method}((int)$data[$field['columnName']]);
+                                            }else{
+                                                $Entity->{$method}(0);
+                                            }
+                                        }
+                                        if ($field['type'] === 'tinyint') {
+                                            if(!empty($data[$field['columnName']])){
+                                                $Entity->{$method}((int)$data[$field['columnName']]);
+                                            }else{
+                                                $Entity->{$method}(0);
+                                            }
+                                        }
+                                        if ($field['type'] === 'array') {
+                                            if(!empty($data[$field['columnName']])){
+                                                $Entity->{$method}(explode('|', $data[$field['columnName']]));
+                                            }else{
+                                                $Entity->{$method}('');
+                                            }
+                                        }
+                                        if ($field['type'] === 'varchar') {
+                                            if(!empty($data[$field['columnName']])){
+                                                $Entity->{$method}($data[$field['columnName']]);
+                                            }else{
+                                                $Entity->{$method}('');
+                                            }
+                                        }
+                                        if ($field['type'] === 'text') {
+                                            if(!empty($data[$field['columnName']])){
+                                                $Entity->{$method}($data[$field['columnName']]);
+                                            }else{
+                                                $Entity->{$method}('');
+                                            }
+                                        }
+                                        if ($field['type'] === 'date') {
+                                            if(!empty($data[$field['columnName']])){
+                                                $Entity->{$method}((new \DateTime($data[$field['columnName']])));
+                                            }else{
+                                                $Entity->{$method}('0000-00-00');
+                                            }
+                                        }
+                                        if ($field['type'] === 'datetime') {
+                                            if(!empty($data[$field['columnName']])){
+                                                $Entity->{$method}(date($data[$field['columnName']])->format('Y-m-d'));
+                                            }else{
+                                                $Entity->{$method}('0000-00-00 00:00:00');
+                                            }
+                                        }
+                                        if ($field['type'] === 'time') {
+
+                                        }
+                                        if ($field['type'] === 'string') {
+                                            if(!empty($data[$field['columnName']])){
+                                                $Entity->{$method}($data[$field['columnName']]);
+                                            }else{
+                                                $Entity->{$method}('');
+                                            }
+                                        }
+                                        if ($field['type'] === 'mediumtext') {
+                                            if(!empty($data[$field['columnName']])){
+                                                $Entity->{$method}($data[$field['columnName']]);
+                                            }else{
+                                                $Entity->{$method}('');
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                $entityManager->persist($Entity);
+                $entityManager->flush();
+                $entityManager->clear();
+
+
+                $CacheAdapter = $this->getConfig()->getCacheAdapterRedis();
+                $CacheAdapter->delete('item-by-id-'.$this->getTableNameWhere().'-'.$id);
+                $CacheAdapter->delete('item-by-user-id-'.$this->getTableName().'-'.$data['userid']);
+                return [
+                    $id,
+                    $this->insertItemHistory($data)
+                ];
+            }
+        }
+
+        $this->lastID = $id;
+
+        $Entity = $this->getConfig()->getEm()->getRepository($className)->find($id);
+
+        if ( $this->getUserId() === $Entity->get_userid()) {
+
+            $class = $this->getConfig()->getEm()->getMetadataFactory()->getMetadataFor($className);
+            foreach (get_class_methods($Entity) as $method) {
+                if($method!=='setId'){
+                    if (strpos($method, 'set') === 0) {
+                        foreach ($class->fieldMappings as $field) {
+                            if ($field['fieldName']!=='id' && 'set_'.$field['columnName'] === $method) {
+                                if($field['columnName'] ==='attachments'){
+                                    if(!empty($data[$field['columnName']])){
+                                        $Entity->{$method}( $this->attachmentsArrayToString($data[$field['columnName']]));
+                                    }else{
+                                        $Entity->{$method}(0);
+                                    }
+                                }else{
+                                    if ($field['type'] === 'integer') {
+                                        if(!empty($data[$field['columnName']])){
+                                            $Entity->{$method}((int)$data[$field['columnName']]);
+                                        }else{
+                                            $Entity->{$method}(0);
+                                        }
+                                    }
+                                    if ($field['type'] === 'double') {
+                                        if(!empty($data[$field['columnName']])){
+                                            $Entity->{$method}((int)$data[$field['columnName']]);
+                                        }else{
+                                            $Entity->{$method}(0);
+                                        }
+                                    }
+                                    if ($field['type'] === 'decimal') {
+                                        if(!empty($data[$field['columnName']])){
+                                            $Entity->{$method}((int)$data[$field['columnName']]);
+                                        }else{
+                                            $Entity->{$method}(0);
+                                        }
+                                    }
+                                    if ($field['type'] === 'tinyint') {
+                                        if(!empty($data[$field['columnName']])){
+                                            $Entity->{$method}((int)$data[$field['columnName']]);
+                                        }else{
+                                            $Entity->{$method}(0);
+                                        }
+                                    }
+                                    if ($field['type'] === 'array') {
+                                        if(!empty($data[$field['columnName']])){
+                                            $Entity->{$method}(explode('|', $data[$field['columnName']]));
+                                        }else{
+                                            $Entity->{$method}('');
+                                        }
+                                    }
+                                    if ($field['type'] === 'varchar') {
+                                        if(!empty($data[$field['columnName']])){
+                                            $Entity->{$method}($data[$field['columnName']]);
+                                        }else{
+                                            $Entity->{$method}('');
+                                        }
+                                    }
+                                    if ($field['type'] === 'text') {
+                                        if(!empty($data[$field['columnName']])){
+                                            $Entity->{$method}($data[$field['columnName']]);
+                                        }else{
+                                            $Entity->{$method}('');
+                                        }
+                                    }
+                                    if ($field['type'] === 'date') {
+                                        if(!empty($data[$field['columnName']])){
+                                            $Entity->{$method}((new \DateTime($data[$field['columnName']])));
+                                        }else{
+                                            $Entity->{$method}('0000-00-00');
+                                        }
+                                    }
+                                    if ($field['type'] === 'datetime') {
+                                        if(!empty($data[$field['columnName']])){
+                                            $Entity->{$method}(date($data[$field['columnName']])->format('Y-m-d'));
+                                        }else{
+                                            $Entity->{$method}('0000-00-00 00:00:00');
+                                        }
+                                    }
+                                    if ($field['type'] === 'time') {
+
+                                    }
+                                    if ($field['type'] === 'string') {
+                                        if(!empty($data[$field['columnName']])){
+                                            $Entity->{$method}($data[$field['columnName']]);
+                                        }else{
+                                            $Entity->{$method}('');
+                                        }
+                                    }
+                                    if ($field['type'] === 'mediumtext') {
+                                        if(!empty($data[$field['columnName']])){
+                                            $Entity->{$method}($data[$field['columnName']]);
+                                        }else{
+                                            $Entity->{$method}('');
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            $entityManager->persist($Entity);
+            $entityManager->flush();
+            $entityManager->clear();
+
+            $CacheAdapter = $this->getConfig()->getCacheAdapterRedis();
+            $CacheAdapter->delete('item-by-id-'.$this->getTableNameWhere().'-'.$id);
+            $CacheAdapter->delete('item-by-user-id-'.$this->getTableName().'-'.$data['userid']);
+            return [
+                $id,
+                $this->insertItemHistory($data)
+            ];
+        }
+        return NULL;
+    }
 
     /**
      * @return array
@@ -3228,7 +3619,7 @@ abstract class ThaiInterface
         $r = [];
         if ($this->Connect) {
             if ($id <= 0) {
-                $r = $this->insertItem($data);
+                $r = $this->insertItemEntity($data);
                 if ($r[0] >= 1) {
                     $data['id'] = $r[0];
                     $data = $this->callbackAfterSave($data);
@@ -3237,7 +3628,7 @@ abstract class ThaiInterface
                     $m = ['error', 'Recording not possible'];
                 }
             } else {
-                $r = $this->updateItem($data);
+                $r = $this->updateItemEntity($data);
                 if ($r[0] >= 1) {
                     $data = $this->callbackAfterUpdate($data);
                     $m = ['info', 'Saved successfully'];
