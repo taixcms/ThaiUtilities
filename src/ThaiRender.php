@@ -316,7 +316,7 @@ msgstr ""
             return (new ThaiGettingClass($this::$Config))->getClass($this::$ClassName)->checkPermission($conditionParams,$conditionName);
         }));
         $this::$Twig->addFunction(new  \Twig\TwigFunction('actionClass', function ($className = '',$method = 'Action',$params = []) {
-           $ActionClass = (new ThaiGettingClass($this::$Config))->getClass($className !== ''?:$this::$Config->getPageName());
+           $ActionClass = (new ThaiGettingClass($this::$Config))->getClass(($className !== ''?$className:$this::$Config->getPageName()));
            return $ActionClass->{$method}($params)->getDTO();
         }));
         return $this::$Twig;
