@@ -160,7 +160,7 @@ abstract class ThaiController
             } else {
                 $this->TableName = explode('\\',get_class($this))[count(explode('\\',get_class($this)))-1];
             }
-;
+
             $this->mergeParam($Db)->setNameDataBase($Db->database);
         } else {
 
@@ -1062,10 +1062,10 @@ abstract class ThaiController
     }
 
     /**
-     * @param Closure $langFunction
+     * @param \Closure $langFunction
      * @return $this
      */
-    public function setLangConverter(Closure $langFunction): ThaiController
+    public function setLangConverter(\Closure $langFunction): ThaiController
     {
         $this->LangConverter = $langFunction;
         return $this;
@@ -1073,10 +1073,10 @@ abstract class ThaiController
 
     /**
      * @param String $key
-     * @param Closure $Func
+     * @param \Closure $Func
      * @return array|null
      */
-    public function getCache(string $key, Closure $Func): ?array
+    public function getCache(string $key, \Closure $Func): ?array
     {
         if ($this->memcache_time) {
             $funcCalBackMemcache_get = $this->memcache_get;
@@ -1112,17 +1112,17 @@ abstract class ThaiController
     }
 
     /**
-     * @return Closure
+     * @return \Closure
      */
-    public function getLangConverter(): Closure
+    public function getLangConverter(): \Closure
     {
         return $this->LangConverter;
     }
 
     /**
-     * @return Closure
+     * @return \Closure
      */
-    public function getCallBack(): Closure
+    public function getCallBack(): \Closure
     {
         if (!$this->CallBackFunction) {
             $this->CallBackFunction = function ($a) {
@@ -1133,20 +1133,20 @@ abstract class ThaiController
     }
 
     /**
-     * @param Closure $CallBackFunction
+     * @param \Closure $CallBackFunction
      * @return $this
      */
-    public function setCallBack(Closure $CallBackFunction): ThaiController
+    public function setCallBack(\Closure $CallBackFunction): ThaiController
     {
         $this->CallBackFunction = $CallBackFunction;
         return $this;
     }
 
     /**
-     * @param Closure $CallBackFunction
+     * @param \Closure $CallBackFunction
      * @return $this
      */
-    public function setCallBackToInit(Closure $CallBackFunction): ThaiController
+    public function setCallBackToInit(\Closure $CallBackFunction): ThaiController
     {
         if (empty($this->CallBackFunction)) {
             $this->setCallBack($CallBackFunction);
@@ -1355,37 +1355,37 @@ abstract class ThaiController
     }
 
     /**
-     * @param Closure $memcache_set
+     * @param \Closure $memcache_set
      * @return $this
      */
-    public function setSetMemCache_set(Closure $memcache_set): ThaiController
+    public function setSetMemCache_set(\Closure $memcache_set): ThaiController
     {
         $this->memcache_set = $memcache_set;
         return $this;
     }
 
     /**
-     * @return Closure
+     * @return \Closure
      */
-    public function getSetMemCache_set(): Closure
+    public function getSetMemCache_set(): \Closure
     {
         return $this->memcache_set;
     }
 
     /**
-     * @param Closure $memcache_get
+     * @param \Closure $memcache_get
      * @return $this
      */
-    public function setMemCache_get(Closure $memcache_get): ThaiController
+    public function setMemCache_get(\Closure $memcache_get): ThaiController
     {
         $this->memcache_get = $memcache_get;
         return $this;
     }
 
     /**
-     * @return Closure
+     * @return \Closure
      */
-    public function getMemCache_get(): Closure
+    public function getMemCache_get(): \Closure
     {
         return $this->memcache_get;
     }
@@ -4036,10 +4036,10 @@ abstract class ThaiController
     }
 
     /**
-     * @param ThaiController $class
+     * @param ThaiInterface $class
      * @return $this
      */
-    public function setDTO(ThaiController $class): ThaiController
+    public function setDTO(ThaiInterface $class): ThaiController
     {
         $this->setDataObject($class->TableName, $class->getDataObject());
         return $this;

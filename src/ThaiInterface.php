@@ -18,7 +18,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Helper\HelperSet;
-
+use StructureProvider;
 /**
  * Class ThaiInterface
  * */
@@ -155,7 +155,7 @@ abstract class ThaiInterface
 
     public function getEntityName(): string
     {
-        return $this->entityName;
+        return 'StructureProvider\\'.$this->entityName;
     }
     
     /**
@@ -176,9 +176,9 @@ abstract class ThaiInterface
             if ($className) {
                 $this->TableName = $className;
             } else {
-                $this->TableName = strtolower(get_class($this));
+                $this->TableName = explode('\\',get_class($this))[count(explode('\\',get_class($this)))-1];
             }
-;
+
             $this->mergeParam($Db)->setNameDataBase($Db->database);
         } else {
 
@@ -200,7 +200,7 @@ abstract class ThaiInterface
             if ($className) {
                 $this->TableName = $className;
             } else {
-                $this->TableName = strtolower(get_class($this));
+                $this->TableName = explode('\\',get_class($this))[count(explode('\\',get_class($this)))-1];
             }
         }
         $this->setLimit(10)->getPermission()->setCurrentPage(1);
@@ -1068,6 +1068,7 @@ abstract class ThaiInterface
         $this->isLogged = $thisClass->isLogged;
         $this->setUserid($thisClass->getUserId());
         $this->Lang = $thisClass->Lang;
+        $this->setConfig($thisClass->getConfig());
         return $this;
     }
 
@@ -2289,11 +2290,13 @@ abstract class ThaiInterface
         $Result = $CacheAdapter->get('item-by-user-id-'.$this->getTableName().'-'.$UserID, function (ItemInterface $item) use( $qb, $UserID ) {
             $item->expiresAfter(3600);
             $Result = [];
+
             $arr = $qb->select( ['A'] )
                 ->from( $this->getEntityName(), 'A')
                 ->Where($qb->expr()->in('A.'.$this->getFieldsWhere(),':userid'))
                 ->setParameter(':userid',$UserID)
                 ->getQuery()->getArrayResult();
+
             foreach ($this->ReformatRowsEntityes( $arr ) as $one) {
                 $Result[]=$one;
             }
@@ -3093,6 +3096,7 @@ abstract class ThaiInterface
      */
     public function insertItemEntity(array $data): ?array
     {
+
         $Permission = $this->checkPermission($data, 'creat');
         if ($Permission === false) {
             $this->setData('error', array_merge($this->getData('error'), [[
@@ -3174,7 +3178,7 @@ abstract class ThaiInterface
                                     if(!empty($data[$field['columnName']])){
                                         $Entity->{$method}((new \DateTime($data[$field['columnName']])));
                                     }else{
-                                        $Entity->{$method}('0000-00-00');
+                                        $Entity->{$method}(new \DateTime());
                                     }
                                 }
                                 if ($field['type'] === 'datetime') {
@@ -3435,16 +3439,16 @@ abstract class ThaiInterface
                                         }
                                         if ($field['type'] === 'date') {
                                             if(!empty($data[$field['columnName']])){
-                                                $Entity->{$method}((new \DateTime($data[$field['columnName']])));
+                                                $Entity->{$method}(new \DateTime($data[$field['columnName']]));
                                             }else{
-                                                $Entity->{$method}('0000-00-00');
+                                                $Entity->{$method}(new \DateTime());
                                             }
                                         }
                                         if ($field['type'] === 'datetime') {
                                             if(!empty($data[$field['columnName']])){
                                                 $Entity->{$method}(date($data[$field['columnName']])->format('Y-m-d'));
                                             }else{
-                                                $Entity->{$method}('0000-00-00 00:00:00');
+                                                $Entity->{$method}(new \DateTime());
                                             }
                                         }
                                         if ($field['type'] === 'time') {
@@ -3555,16 +3559,16 @@ abstract class ThaiInterface
                                     }
                                     if ($field['type'] === 'date') {
                                         if(!empty($data[$field['columnName']])){
-                                            $Entity->{$method}((new \DateTime($data[$field['columnName']])));
+                                            $Entity->{$method}(new \DateTime($data[$field['columnName']]));
                                         }else{
-                                            $Entity->{$method}('0000-00-00');
+                                            $Entity->{$method}(new \DateTime());
                                         }
                                     }
                                     if ($field['type'] === 'datetime') {
                                         if(!empty($data[$field['columnName']])){
-                                            $Entity->{$method}(date($data[$field['columnName']])->format('Y-m-d'));
+                                            $Entity->{$method}(new \DateTime($data[$field['columnName']]));
                                         }else{
-                                            $Entity->{$method}('0000-00-00 00:00:00');
+                                            $Entity->{$method}(new \DateTime());
                                         }
                                     }
                                     if ($field['type'] === 'time') {
