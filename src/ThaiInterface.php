@@ -2117,7 +2117,7 @@ abstract class ThaiInterface
         $Result = $CacheAdapter->get('item-by-id-'.$this->getTableName().'-'.$id, function (ItemInterface $item) use( $qb, $id ) {
             $item->expiresAfter(3600);
             $Result = [];
-            include('/var/www/qwerty.blog/entities/'.str_replace('\\','/',$this->getEntityName()).'.php');
+            include($this->getConfig()->getEntitiesDir()[0].'/'.str_replace('\\','/',$this->getEntityName()).'.php');
             $arr = $qb->select( ['A'] )
                 ->from( $this->getEntityName(), 'A')
                 ->Where($qb->expr()->in('A.id',':id'))
@@ -2294,7 +2294,7 @@ abstract class ThaiInterface
 
 
 
-            include('/var/www/qwerty.blog/entities/'.str_replace('\\','/',$this->getEntityName()).'.php');
+            include($this->getConfig()->getEntitiesDir()[0].'/'.str_replace('\\','/',$this->getEntityName()).'.php');
 
 
 
@@ -3120,7 +3120,7 @@ abstract class ThaiInterface
 
         $className = $this->getEntityName();
         $entityManager = $this->getConfig()->getEm();
-        include('/var/www/qwerty.blog/entities/'.str_replace('\\','/',$this->getEntityName()).'.php');
+        include($this->getConfig()->getEntitiesDir()[0].'/'.str_replace('\\','/',$this->getEntityName()).'.php');
         $Entity = new $className();
         $class = $this->getConfig()->getEm()->getMetadataFactory()->getMetadataFor($className);
         foreach (get_class_methods($Entity) as $method) {
@@ -3370,7 +3370,7 @@ abstract class ThaiInterface
         $id = (int)$data['id'];
         $cacheItem = [];
         $className = $this->getEntityName();
-        include('/var/www/qwerty.blog/entities/'.str_replace('\\','/',$this->getEntityName()).'.php');
+        include($this->getConfig()->getEntitiesDir()[0].'/'.str_replace('\\','/',$this->getEntityName()).'.php');
         $entityManager = $this->getConfig()->getEm();
         $Permission = $this->checkPermission($data, 'update');
         if ($Permission === false) {
