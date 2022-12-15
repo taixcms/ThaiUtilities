@@ -155,6 +155,9 @@ abstract class ThaiInterface
 
     public function getEntityName(): string
     {
+        if (!class_exists('StructureProvider\\'.$this->entityName) && file_exists($this->getConfig()->getEntitiesDir()[0].'/'.str_replace('\\','/',$this->entityName).'.php')) {
+            include($this->getConfig()->getEntitiesDir()[0].'/'.str_replace('\\','/',$this->entityName).'.php');
+        }
         return 'StructureProvider\\'.$this->entityName;
     }
 
@@ -2117,9 +2120,6 @@ abstract class ThaiInterface
         $Result = $CacheAdapter->get('item-by-id-'.$this->getTableName().'-'.$id, function (ItemInterface $item) use( $qb, $id ) {
             $item->expiresAfter(3600);
             $Result = [];
-            if (!class_exists($this->getEntityName())) {
-                include($this->getConfig()->getEntitiesDir()[0].'/'.str_replace('\\','/',$this->getEntityName()).'.php');
-            }
             $arr = $qb->select( ['A'] )
                 ->from( $this->getEntityName(), 'A')
                 ->Where($qb->expr()->in('A.id',':id'))
@@ -2293,9 +2293,6 @@ abstract class ThaiInterface
         $Result = $CacheAdapter->get('item-by-user-id-'.$this->getTableName().'-'.$UserID, function (ItemInterface $item) use( $qb, $UserID ) {
             $item->expiresAfter(3600);
             $Result = [];
-            if (!class_exists($this->getEntityName())) {
-                include($this->getConfig()->getEntitiesDir()[0].'/'.str_replace('\\','/',$this->getEntityName()).'.php');
-            }
             $arr = $qb->select( ['A'] )
                 ->from( $this->getEntityName(), 'A')
                 ->Where($qb->expr()->in('A.'.$this->getFieldsWhere(),':userid'))
@@ -3117,10 +3114,6 @@ abstract class ThaiInterface
         $className = $this->getEntityName();
         $entityManager = $this->getConfig()->getEm();
         
-        if (!class_exists($this->getEntityName())) {
-            include($this->getConfig()->getEntitiesDir()[0].'/'.str_replace('\\','/',$this->getEntityName()).'.php');
-        }
-
         $Entity = new $className();
         $class = $this->getConfig()->getEm()->getMetadataFactory()->getMetadataFor($className);
         foreach (get_class_methods($Entity) as $method) {
@@ -3370,9 +3363,6 @@ abstract class ThaiInterface
         $id = (int)$data['id'];
         $cacheItem = [];
         $className = $this->getEntityName();
-        if (!class_exists($this->getEntityName())) {
-            include($this->getConfig()->getEntitiesDir()[0].'/'.str_replace('\\','/',$this->getEntityName()).'.php');
-        }
         $entityManager = $this->getConfig()->getEm();
         $Permission = $this->checkPermission($data, 'update');
         if ($Permission === false) {
