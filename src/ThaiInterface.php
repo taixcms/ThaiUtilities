@@ -161,10 +161,10 @@ abstract class ThaiInterface
         return 'StructureProvider\\'.$this->entityName;
     }
 
-    public function getEntity(): string
+    public function getEntity()
     {
         $EntityName = $this->getEntityName();
-        return new $EntityName();;
+        return new $EntityName();
     }
     /**
      * @param  $Db
@@ -2122,6 +2122,9 @@ abstract class ThaiInterface
         $em = $this->getConfig()->getEm();
         $qb = $em->createQueryBuilder();
 
+
+
+
             $Result = [];
             $arr = $qb->select( ['A'] )
                 ->from( $this->getEntityName(), 'A')
@@ -2135,6 +2138,8 @@ abstract class ThaiInterface
             foreach ($this->ReformatRowsEntityes( $arr ) as $one) {
                 $Result[]=$one;
             }
+
+
 
         $itemValue = null;
         foreach ( $Result as $one) {
@@ -2291,19 +2296,22 @@ abstract class ThaiInterface
      */
     public function ItemByUserID($UserID, string $key = NULL): ThaiInterface
     {
+        $CacheAdapter = $this->getConfig()->getCacheAdapterRedis();
         $qb = $this->getConfig()->getEm()->createQueryBuilder();
+        $Result = $CacheAdapter->get('item-by-user-id-'.$this->getTableName().'-'.$UserID, function (ItemInterface $item) use( $qb, $UserID ) {
+            $item->expiresAfter(3600);
             $Result = [];
             $arr = $qb->select( ['A'] )
                 ->from( $this->getEntityName(), 'A')
                 ->Where($qb->expr()->in('A.'.$this->getFieldsWhere(),':userid'))
                 ->setParameter(':userid',$UserID)
-                ->getQuery()
-                ->getArrayResult();
+                ->getQuery()->getArrayResult();
 
             foreach ($this->ReformatRowsEntityes( $arr ) as $one) {
                 $Result[]=$one;
             }
-
+            return $Result;
+        });
         $itemValue = null;
         foreach ( $Result as $one) {
             $cFunc = $this->getCallBack();
