@@ -161,6 +161,11 @@ abstract class ThaiInterface
         return 'StructureProvider\\'.$this->entityName;
     }
 
+    public function getEntity(): string
+    {
+        $EntityName = $this->getEntityName();
+        return new $EntityName();;
+    }
     /**
      * @param  $Db
      * @param  $className
@@ -2117,21 +2122,19 @@ abstract class ThaiInterface
         $em = $this->getConfig()->getEm();
         $qb = $em->createQueryBuilder();
 
-        $Result = $CacheAdapter->get('item-by-id-'.$this->getTableName().'-'.$id, function (ItemInterface $item) use( $qb, $id ) {
-            $item->expiresAfter(3600);
             $Result = [];
             $arr = $qb->select( ['A'] )
                 ->from( $this->getEntityName(), 'A')
                 ->Where($qb->expr()->in('A.id',':id'))
                 ->setParameter(':id',$id)
                 ->setMaxResults(1)
-                ->getQuery()->getArrayResult();
+                ->getQuery()
+                ->enableResultCache($this->getConfig()->getDoctrineCacheDefaultLifetime(), $this->getEntityName().':'.$id)
+                ->getArrayResult();
 
             foreach ($this->ReformatRowsEntityes( $arr ) as $one) {
                 $Result[]=$one;
             }
-            return $Result;
-        });
 
         $itemValue = null;
         foreach ( $Result as $one) {
@@ -2288,22 +2291,19 @@ abstract class ThaiInterface
      */
     public function ItemByUserID($UserID, string $key = NULL): ThaiInterface
     {
-        $CacheAdapter = $this->getConfig()->getCacheAdapterRedis();
         $qb = $this->getConfig()->getEm()->createQueryBuilder();
-        $Result = $CacheAdapter->get('item-by-user-id-'.$this->getTableName().'-'.$UserID, function (ItemInterface $item) use( $qb, $UserID ) {
-            $item->expiresAfter(3600);
             $Result = [];
             $arr = $qb->select( ['A'] )
                 ->from( $this->getEntityName(), 'A')
                 ->Where($qb->expr()->in('A.'.$this->getFieldsWhere(),':userid'))
                 ->setParameter(':userid',$UserID)
-                ->getQuery()->getArrayResult();
+                ->getQuery()
+                ->getArrayResult();
 
             foreach ($this->ReformatRowsEntityes( $arr ) as $one) {
                 $Result[]=$one;
             }
-            return $Result;
-        });
+
         $itemValue = null;
         foreach ( $Result as $one) {
             $cFunc = $this->getCallBack();
@@ -3160,16 +3160,12 @@ abstract class ThaiInterface
             return [0, 0];
         }
 
-        $className = $this->getEntityName();
         $entityManager = $this->getConfig()->getEm();
-
-        $Entity = new $className();
-        $class = $this->getConfig()->getEm()->getMetadataFactory()->getMetadataFor($className);
-
+        $Entity = $this->getEntity();
         foreach (get_class_methods($Entity) as $method) {
             if($method!=='setId'){
                 if (strpos($method, 'set') === 0) {
-                    foreach ($class->fieldMappings as $field) {
+                    foreach ($entityManager->getMetadataFactory()->getMetadataFor($this->getEntityName())->fieldMappings as $field) {
                         if ($field['fieldName']!=='id' && 'set_'.$field['columnName'] === $method) {
                             if($field['columnName'] ==='attachments'){
                                 if(!empty($data[$field['columnName']])){
@@ -3188,8 +3184,7 @@ abstract class ThaiInterface
         $entityManager->persist($Entity);
         $entityManager->flush();
         $entityManager->clear();
-        $CacheAdapter = $this->getConfig()->getCacheAdapterRedis();
-        $CacheAdapter->delete('item-by-user-id-'.$this->getTableName().'-'.$this->getUserId());
+
         return [
             $Entity->get_id(),
             $this->insertItemHistory($data)
@@ -3240,14 +3235,16 @@ abstract class ThaiInterface
                         }
                     }
                 }
+
                 $entityManager->persist($Entity);
                 $entityManager->flush();
                 $entityManager->clear();
 
+                if (  method_exists($Entity,'get_id')) {
+                    $cache = $entityManager->getConfiguration()->getQueryCache();
+                    $cache->delete($this->getEntityName().':'.$Entity->get_id());
+                }
 
-                $CacheAdapter = $this->getConfig()->getCacheAdapterRedis();
-                $CacheAdapter->delete('item-by-id-'.$this->getTableNameWhere().'-'.$id);
-                $CacheAdapter->delete('item-by-user-id-'.$this->getTableName().'-'.$data['userid']);
                 return [
                     $id,
                     $this->insertItemHistory($data)
@@ -3285,9 +3282,11 @@ abstract class ThaiInterface
             $entityManager->flush();
             $entityManager->clear();
 
-            $CacheAdapter = $this->getConfig()->getCacheAdapterRedis();
-            $CacheAdapter->delete('item-by-id-'.$this->getTableNameWhere().'-'.$id);
-            $CacheAdapter->delete('item-by-user-id-'.$this->getTableName().'-'.$Entity->get_userid());
+            if (  method_exists($Entity,'get_id')) {
+                $cache = $entityManager->getConfiguration()->getQueryCache();
+                $cache->delete($this->getEntityName().':'.$Entity->get_id());
+            }
+
             return [
                 $id,
                 $this->insertItemHistory($data)
