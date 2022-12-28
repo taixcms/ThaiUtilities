@@ -4,7 +4,7 @@ namespace ThaiUtilities;
 
 use \Closure;
 use \Exception;
-
+use Doctrine\Laminas\Hydrator\DoctrineObject;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\Query\Expr;
@@ -19,6 +19,8 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Helper\HelperSet;
 use StructureProvider;
+
+
 /**
  * Class ThaiInterface
  * */
@@ -161,7 +163,7 @@ abstract class ThaiInterface
         return 'StructureProvider\\'.$this->entityName;
     }
 
-    public function getEntity()
+    public function createNewEntity()
     {
         $EntityName = $this->getEntityName();
         return new $EntityName();
@@ -880,6 +882,50 @@ abstract class ThaiInterface
     }
 
     /**
+     * @param string $related
+     * @param array $data
+     * @param array $element
+     * @return array
+     */
+    public function callbackAfterEntityRemove(array $data,array $element,string $related): ?array
+    {
+        return $data;
+    }
+
+    /**
+     * @param string $related
+     * @param array $data
+     * @param array $element
+     * @return array
+     */
+    public function callbackBeforeEntityRemove(array $data,array $element,string $related): ?array
+    {
+        return $data;
+    }
+
+    /**
+     * @param string $related
+     * @param array $data
+     * @param array $element
+     * @return array
+     */
+    public function callbackAfterEntityAdd(array $data,array $element,string $related): ?array
+    {
+        return $data;
+    }
+
+    /**
+     * @param string $related
+     * @param array $data
+     * @param array $element
+     * @return array
+     */
+    public function callbackBeforeEntityAdd(array $data,array $element,string $related): ?array
+    {
+        return $data;
+    }
+
+    /**
      * @param array $data
      * @return array
      */
@@ -971,6 +1017,18 @@ abstract class ThaiInterface
                     $uRow['default'] = $this->getDefaultValue($uRow['fieldName']);
                     $arr[] = $uRow;
                 }
+
+                if($this->getEntityName() !== 'StructureProvider\\'){
+                    foreach ($this->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings as $associationField) {
+                        $arr[] = array(
+                            "fieldName" => $associationField["fieldName"],
+                            "fieldType" => "array",
+                            "required"  => false,
+                            "default"   => NULL
+                          );
+                    }
+                }
+
             } else {
                 $this->setData('error', array_merge($this->getData('error'), [[
                     'method' => 'getSkeleton',
@@ -1251,6 +1309,22 @@ abstract class ThaiInterface
                     }
                     if ($value['columnName'] === 'attachments') {
                         $this->setAttachmentsStatus();
+                    }
+                }
+
+                foreach ($rows as $key2=>$row3) {
+                    foreach ($class->associationMappings as $associationField) {
+                        if (!empty($rows[$key2][$associationField['fieldName']])) {
+                            if(!empty($rows[$key2][$associationField['fieldName']]) && count($rows[$key2][$associationField['fieldName']])>=1){
+                                foreach ($this->ReformatRowsEntityes($rows[$key2][$associationField['fieldName']]) as  $valueTargetEntitye) {
+                                    $newArray[$key2][$associationField['fieldName']][]=$valueTargetEntitye;
+                                }
+                            }else{
+                                $newArray[$key2][$associationField['fieldName']]=[];
+                            }
+                        }else{
+                            $newArray[$key2][$associationField['fieldName']]=[];
+                        }
                     }
                 }
 
@@ -2110,6 +2184,39 @@ abstract class ThaiInterface
         return $this;
     }
 
+
+
+    public function toArray($entityObject)
+    {
+//        $hydrator = new DoctrineObject($this->getConfig()->getEm(),false);
+//
+//        $arr = $hydrator->extract($entityObject);
+//        //var_dump($arr);
+//        foreach ($arr as $key=>$value) {
+//            //var_dump($value);
+//
+//            //toArray
+//            if(gettype($value) === 'object' && get_class($value) === 'Doctrine\ORM\PersistentCollection'){
+//                var_dump($value->unwrap()->toArray());
+//                foreach ($value as $one) {
+//
+//
+//                    //$Result[]=$hydrator->extract($one);
+//                }
+//
+//                //$arr[$key]=$Result;
+//            }
+//
+//        }
+//        return $arr;
+
+
+        $hydrator = new DoctrineObject($this->getConfig()->getEm(),false);
+        $arr = $hydrator->extract($entityObject);
+        return $arr;
+    }
+    
+    
     /**
      * @param int|string $id
      * @param string|null $key
@@ -2118,52 +2225,48 @@ abstract class ThaiInterface
      */
     public function ItemByID($id, string $key = NULL): ThaiInterface
     {
-        $CacheAdapter = $this->getConfig()->getCacheAdapterRedis();
+
+        $qb = $this->getConfig()->getEm()->createQueryBuilder();
+        $qb->select( ['A'] )->from( $this->getEntityName(), 'A')->setParameter(':id', $id);
+
+//        $isNotMapping = true;
+//        foreach ($this->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings as $associationField) {
+//            $isNotMapping = false;
+//            $qb->addSelect( ['N'.$associationField['fieldName']] )->leftJoin('A.'.$associationField['fieldName'], 'N'.$associationField['fieldName']);
+//            $qb->andWhere($qb->expr()->orX(
+//                $qb->expr()->andX(
+//                    $qb->expr()->in('A.id', ':id'),
+//                    $qb->expr()->isNotNull('N'.$associationField['fieldName'].'.id')
+//                ),
+//                $qb->expr()->isNull('N'.$associationField['fieldName'].'.id')
+//            ));
+//        }
+        //if($isNotMapping){
+            $qb->andWhere($qb->expr()->in('A.id', ':id'));
+       // }
+            foreach ($this->ReformatRowsEntityes( $qb->getQuery()->getArrayResult() ) as $one) {
+                    $this->setData($key ?: $this->getTableName(), $one);
+                return $this;
+            }
+        $this->setData($key ?: $this->getTableName(), null);
+        return $this;
+    }
+
+    /**
+     * @param int|string $fieldName
+     * @param int|string $fieldValue
+     * @return mixed
+     * @throws Exception
+     */
+    public function EntityOneByField($fieldName,$fieldValue)
+    {
         $em = $this->getConfig()->getEm();
         $qb = $em->createQueryBuilder();
-
-
-
-
-            $Result = [];
-            $arr = $qb->select( ['A'] )
-                ->from( $this->getEntityName(), 'A')
-                ->Where($qb->expr()->in('A.id',':id'))
-                ->setParameter(':id',$id)
-                ->setMaxResults(1)
-                ->getQuery()
-                ->enableResultCache($this->getConfig()->getDoctrineCacheDefaultLifetime(), $this->getEntityName().':'.$id)
-                ->getArrayResult();
-
-            foreach ($this->ReformatRowsEntityes( $arr ) as $one) {
-                $Result[]=$one;
-            }
-
-
-
-        $itemValue = null;
-        foreach ( $Result as $one) {
-            $cFunc = $this->getCallBack();
-            $itemValue = $cFunc($one);
-            if ($itemValue) {
-                if (!empty($itemValue['id'])) {
-                    $this->setIDs($itemValue['id']);
-                }
-            }
+        $arr =  $em->getRepository($this->getEntityName())->findBy(array($fieldName=>$fieldValue));
+        foreach ( $arr as $one) {
+            return $one;
         }
-
-        if ($itemValue!==null) {
-            $Permission = $this->checkPermission($itemValue, 'viewItem');
-            if ( $Permission) {
-                $this->setConditionToDataObject($itemValue);
-                $this->setData($key ?: $this->getTableName(), $itemValue);
-            }else{
-                $this->setData($key ?: $this->getTableName(), null);
-            }
-        }else{
-            $this->setData($key ?: $this->getTableName(), null);
-        }
-        return $this;
+        return null;
     }
 
     /**
@@ -2296,45 +2399,30 @@ abstract class ThaiInterface
      */
     public function ItemByUserID($UserID, string $key = NULL): ThaiInterface
     {
-        $CacheAdapter = $this->getConfig()->getCacheAdapterRedis();
         $qb = $this->getConfig()->getEm()->createQueryBuilder();
-        $Result = $CacheAdapter->get('item-by-user-id-'.$this->getTableName().'-'.$UserID, function (ItemInterface $item) use( $qb, $UserID ) {
-            $item->expiresAfter(3600);
-            $Result = [];
-            $arr = $qb->select( ['A'] )
-                ->from( $this->getEntityName(), 'A')
-                ->Where($qb->expr()->in('A.'.$this->getFieldsWhere(),':userid'))
-                ->setParameter(':userid',$UserID)
-                ->getQuery()->getArrayResult();
+        $qb->select( ['A'] )->from( $this->getEntityName(), 'A')->setParameter(':userid', $UserID);
 
-            foreach ($this->ReformatRowsEntityes( $arr ) as $one) {
-                $Result[]=$one;
-            }
-            return $Result;
-        });
-        $itemValue = null;
-        foreach ( $Result as $one) {
-            $cFunc = $this->getCallBack();
-            $itemValue = $cFunc($one);
-            if ($itemValue) {
-                if (!empty($itemValue['id'])) {
-                    $this->setIDs($itemValue['id']);
-                }
-            }
-        }
+//        $isNotMapping = true;
+//        foreach ($this->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings as $associationField) {
+//            $isNotMapping = false;
+//            $qb->addSelect( ['N'.$associationField['fieldName']] )->leftJoin('A.'.$associationField['fieldName'], 'N'.$associationField['fieldName']);
+//            $qb->andWhere($qb->expr()->orX(
+//                $qb->expr()->andX(
+//                    $qb->expr()->in('A.userid', ':userid'),
+//                    $qb->expr()->isNotNull('N'.$associationField['fieldName'].'.userid')
+//                ),
+//                $qb->expr()->isNull('N'.$associationField['fieldName'].'.userid')
+//            ));
+//        }
+       // if($isNotMapping){
+            $qb->andWhere($qb->expr()->in('A.userid', ':userid'));
+        //}
 
-        if ($itemValue!==null) {
-            $Permission = $this->checkPermission($itemValue, 'viewItem');
-            if ( $Permission) {
-                $this->setConditionToDataObject($itemValue);
-                $this->setData($key ?: $this->getTableName(), $itemValue);
-            }else{
-                $this->setData($key ?: $this->getTableName(), null);
+            foreach ($this->ReformatRowsEntityes( $qb->getQuery()->getArrayResult() ) as $one) {
+                $this->setData($key ?: $this->getTableName(), $one);
+                return $this;
             }
-        }else{
-            $this->setData($key ?: $this->getTableName(), null);
-        }
-
+        $this->setData($key ?: $this->getTableName(), null);
         return $this;
     }
 
@@ -3169,10 +3257,34 @@ abstract class ThaiInterface
         }
 
         $entityManager = $this->getConfig()->getEm();
-        $Entity = $this->getEntity();
+        $Entity = $this->createNewEntity();
+
+
+
+//            foreach ($entityManager->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings as $associationField) {
+//                $methodTargetClear = 'clear' . $associationField['fieldName'];
+//                if(method_exists($Entity,$methodTargetClear)){
+//                    $Entity->{$methodTargetClear}();
+//                }
+//                $methodTargetAdd = 'add' . $associationField['fieldName'];
+//                if (method_exists($Entity,$methodTargetAdd)) {
+//                    $targetEntityName = $entityManager->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings[$associationField['fieldName']]["targetEntity"];
+//                    if(!empty($data[$associationField['fieldName']])){
+//                        foreach ($data[$associationField['fieldName']] as $newData) {
+//                            if((int)$newData['id']>=1){
+//                                $EntityTarget = $this->getConfig()->getEm()->getRepository($targetEntityName)->find($newData['id']);
+//                                $Entity->{$methodTargetAdd}($EntityTarget);
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+
+
+
         foreach (get_class_methods($Entity) as $method) {
             if($method!=='setId'){
-                if (strpos($method, 'set') === 0) {
+                if (strpos($method, 'set') === 0 ) {
                     foreach ($entityManager->getMetadataFactory()->getMetadataFor($this->getEntityName())->fieldMappings as $field) {
                         if ($field['fieldName']!=='id' && 'set_'.$field['columnName'] === $method) {
                             if($field['columnName'] ==='attachments'){
@@ -3189,16 +3301,24 @@ abstract class ThaiInterface
                 }
             }
         }
-        $entityManager->persist($Entity);
-        $entityManager->flush();
-        $entityManager->clear();
 
+        $this->saveEntity($Entity);
         return [
             $Entity->get_id(),
             $this->insertItemHistory($data)
         ];
     }
 
+
+    public function saveEntity($Entity):ThaiInterface
+    {
+            $entityManager = $this->getEm();
+            $entityManager->persist($Entity);
+            $entityManager->flush();
+            $entityManager->clear();
+            return $this;
+    }
+    
     /**
      * @param array $data
      * @return array
@@ -3224,6 +3344,26 @@ abstract class ThaiInterface
             if ($Permission === true) {
                 $Entity = $this->getConfig()->getEm()->getRepository($className)->find($id);
                 $class = $this->getConfig()->getEm()->getMetadataFactory()->getMetadataFor($className);
+
+//                foreach ($entityManager->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings as $associationField) {
+//                    $methodTargetClear = 'clear' . $associationField['fieldName'];
+//                    if(method_exists($Entity,$methodTargetClear)){
+//                        $Entity->{$methodTargetClear}();
+//                    }
+//                    $methodTargetAdd = 'add' . $associationField['fieldName'];
+//                    if (method_exists($Entity,$methodTargetAdd)) {
+//                        $targetEntityName = $entityManager->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings[$associationField['fieldName']]["targetEntity"];
+//                        if(!empty($data[$associationField['fieldName']])){
+//                            foreach ($data[$associationField['fieldName']] as $newData) {
+//                                if((int)$newData['id']>=1){
+//                                    $EntityTarget = $this->getConfig()->getEm()->getRepository($targetEntityName)->find($newData['id']);
+//                                    $Entity->{$methodTargetAdd}($EntityTarget);
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+
                 foreach (get_class_methods($Entity) as $method) {
                     if($method!=='setId'){
                         if (strpos($method, 'set') === 0) {
@@ -3244,10 +3384,7 @@ abstract class ThaiInterface
                     }
                 }
 
-                $entityManager->persist($Entity);
-                $entityManager->flush();
-                $entityManager->clear();
-
+                $this->saveEntity($Entity);
                 if (  method_exists($Entity,'get_id')) {
                     $cache = $entityManager->getConfiguration()->getQueryCache();
                     $cache->delete($this->getEntityName().':'.$Entity->get_id());
@@ -3265,6 +3402,27 @@ abstract class ThaiInterface
         $Entity = $this->getConfig()->getEm()->getRepository($className)->find($id);
 
         if ( $this->getUserId() === $Entity->get_userid()) {
+
+
+//            foreach ($entityManager->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings as $associationField) {
+//                $methodTargetClear = 'clear' . $associationField['fieldName'];
+//                if(method_exists($Entity,$methodTargetClear)){
+//                    $Entity->{$methodTargetClear}();
+//                }
+//                $methodTargetAdd = 'add' . $associationField['fieldName'];
+//                if (method_exists($Entity,$methodTargetAdd)) {
+//                    $targetEntityName = $entityManager->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings[$associationField['fieldName']]["targetEntity"];
+//                    if(!empty($data[$associationField['fieldName']])){
+//                        foreach ($data[$associationField['fieldName']] as $newData) {
+//                            if((int)$newData['id']>=1){
+//                                $EntityTarget = $this->getConfig()->getEm()->getRepository($targetEntityName)->find($newData['id']);
+//                                $Entity->{$methodTargetAdd}($EntityTarget);
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+
 
             $class = $this->getConfig()->getEm()->getMetadataFactory()->getMetadataFor($className);
             foreach (get_class_methods($Entity) as $method) {
@@ -3286,10 +3444,191 @@ abstract class ThaiInterface
                     }
                 }
             }
-            $entityManager->persist($Entity);
-            $entityManager->flush();
-            $entityManager->clear();
 
+            $this->saveEntity($Entity);
+            if (  method_exists($Entity,'get_id')) {
+                $cache = $entityManager->getConfiguration()->getQueryCache();
+                $cache->delete($this->getEntityName().':'.$Entity->get_id());
+            }
+
+            return [
+                $id,
+                $this->insertItemHistory($data)
+            ];
+        }
+        return NULL;
+    }
+
+
+    /**
+     * @param array $data
+     * @param array $element
+     * @param string $$Related
+     * @return array
+     * @throws Exception
+     */
+    public function FromEntityRemove(array $data,array $element,string $Related): ?array
+    {
+
+        $id = (int)$data['id'];
+        $element['id'] = (int)$element['id'];
+
+        $className = $this->getEntityName();
+        $entityManager = $this->getConfig()->getEm();
+        $Permission = $this->checkPermission($data, 'update');
+        if ($Permission === false) {
+            $this->addData('error',  [
+                'method' => 'insertItem',
+                'data' => [],
+                'TableName' => $this->getTableName(),
+                'key' => '',
+                'msg' => $this->translated('Access denied'),
+            ]);
+            return [0, 0];
+        } else {
+            if ($Permission === true) {
+                $Entity = $this->getConfig()->getEm()->getRepository($className)->find($id);
+                $class = $this->getConfig()->getEm()->getMetadataFactory()->getMetadataFor($className);
+
+                foreach ($entityManager->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings as $associationField) {
+                    if($associationField['fieldName'] === $Related) {
+                        $methodTargetRemoveOne = 'removeOne' . $associationField['fieldName'];
+                        if (method_exists($Entity, $methodTargetRemoveOne)) {
+                            $targetEntityName = $entityManager->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings[$associationField['fieldName']]["targetEntity"];
+                            if ((int)$element['id'] >= 1) {
+                                $EntityTarget = $this->getConfig()->getEm()->getRepository($targetEntityName)->find($element['id']);
+                                $Entity->{$methodTargetRemoveOne}($EntityTarget);
+                            }
+                        }
+                    }
+                }
+
+                $this->saveEntity($Entity);
+                if (  method_exists($Entity,'get_id')) {
+                    $cache = $entityManager->getConfiguration()->getQueryCache();
+                    $cache->delete($this->getEntityName().':'.$Entity->get_id());
+                }
+
+                return [
+                    $id,
+                    $this->insertItemHistory($data)
+                ];
+            }
+        }
+
+        $this->lastID = $id;
+
+        $Entity = $this->getConfig()->getEm()->getRepository($className)->find($id);
+
+        if ( $this->getUserId() === $Entity->get_userid()) {
+
+
+            foreach ($entityManager->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings as $associationField) {
+                if($associationField['fieldName'] === $Related) {
+                    $methodTargetRemoveOne = 'removeOne' . $associationField['fieldName'];
+                    if (method_exists($Entity, $methodTargetRemoveOne)) {
+                        $targetEntityName = $entityManager->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings[$associationField['fieldName']]["targetEntity"];
+                        if ((int)$element['id'] >= 1) {
+                            $EntityTarget = $this->getConfig()->getEm()->getRepository($targetEntityName)->find($element['id']);
+                            $Entity->{$methodTargetRemoveOne}($EntityTarget);
+                        }
+                    }
+                }
+            }
+
+
+            $this->saveEntity($Entity);
+            if (  method_exists($Entity,'get_id')) {
+                $cache = $entityManager->getConfiguration()->getQueryCache();
+                $cache->delete($this->getEntityName().':'.$Entity->get_id());
+            }
+
+            return [
+                $id,
+                $this->insertItemHistory($data)
+            ];
+        }
+        return NULL;
+    }
+
+    /**
+     * @param array $data
+     * @param array $element
+     * @param string $$Related
+     * @return array
+     * @throws Exception
+     */
+    public function ToEntityAdd(array $data,array $element,string $Related): ?array
+    {
+
+        $id = (int)$data['id'];
+        $element['id'] = (int)$element['id'];
+
+        $className = $this->getEntityName();
+        $entityManager = $this->getConfig()->getEm();
+        $Permission = $this->checkPermission($data, 'update');
+        if ($Permission === false) {
+            $this->addData('error',  [
+                'method' => 'insertItem',
+                'data' => [],
+                'TableName' => $this->getTableName(),
+                'key' => '',
+                'msg' => $this->translated('Access denied'),
+            ]);
+            return [0, 0];
+        } else {
+            if ($Permission === true) {
+                $Entity = $this->getConfig()->getEm()->getRepository($className)->find($id);
+                $class = $this->getConfig()->getEm()->getMetadataFactory()->getMetadataFor($className);
+
+                foreach ($entityManager->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings as $associationField) {
+                    if($associationField['fieldName'] === $Related) {
+                        $methodTargetAdd = 'add' . $associationField['fieldName'];
+                        if (method_exists($Entity, $methodTargetAdd)) {
+                            $targetEntityName = $entityManager->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings[$associationField['fieldName']]["targetEntity"];
+                            if ((int)$element['id'] >= 1) {
+                                $EntityTarget = $this->getConfig()->getEm()->getRepository($targetEntityName)->find($element['id']);
+                                $Entity->{$methodTargetAdd}($EntityTarget);
+                            }
+                        }
+                    }
+                }
+
+                $this->saveEntity($Entity);
+                if (  method_exists($Entity,'get_id')) {
+                    $cache = $entityManager->getConfiguration()->getQueryCache();
+                    $cache->delete($this->getEntityName().':'.$Entity->get_id());
+                }
+
+                return [
+                    $id,
+                    $this->insertItemHistory($data)
+                ];
+            }
+        }
+
+        $this->lastID = $id;
+
+        $Entity = $this->getConfig()->getEm()->getRepository($className)->find($id);
+
+        if ( $this->getUserId() === $Entity->get_userid()) {
+
+
+            foreach ($entityManager->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings as $associationField) {
+                if($associationField['fieldName'] === $Related) {
+                    $methodTargetAdd = 'add' . $associationField['fieldName'];
+                    if (method_exists($Entity, $methodTargetAdd)) {
+                        $targetEntityName = $entityManager->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings[$associationField['fieldName']]["targetEntity"];
+                        if ((int)$element['id'] >= 1) {
+                            $EntityTarget = $this->getConfig()->getEm()->getRepository($targetEntityName)->find($element['id']);
+                            $Entity->{$methodTargetAdd}($EntityTarget);
+                        }
+                    }
+                }
+            }
+
+
+            $this->saveEntity($Entity);
             if (  method_exists($Entity,'get_id')) {
                 $cache = $entityManager->getConfiguration()->getQueryCache();
                 $cache->delete($this->getEntityName().':'.$Entity->get_id());
@@ -3430,12 +3769,94 @@ abstract class ThaiInterface
         return NULL;
     }
 
+
+    /**
+     * @param string $related
+     * @param array $data
+     * @return array
+     * @throws Exception
+     */
+    public function removeFromEntity($element,string $related): array
+    {
+        $data = $this->getSkeleton()
+            ->getRequest();
+        $data = $this->callbackBeforeEntityRemove($data,$element, $related);
+
+        $id = (int)$data['id'];
+        $r = [];
+        if ($this->Connect) {
+            if ($id >= 1) {
+                $r = $this->FromEntityRemove($data,$element, $related);
+                if ($r[0] >= 1) {
+                    $data = $this->callbackAfterEntityRemove($data,$element, $related);
+                    $m = ['info', 'Related item removed'];
+                } else {
+                    $m = ['error', 'Access denied'];
+                }
+            }
+        } else {
+            $m = ['error', 'Database connection error'];
+        }
+
+        return [
+            'status' => $m[0],
+            'error' => 0,
+            'userid' => $this->getUserId(),
+            'fieldsId' => $this->getFieldsId(),
+            'result' => $r,
+            'id' => $r[0],
+            'condition' => $this->Condition,
+            'msg' => $this->translated($m[1]),
+        ];
+    }
+
+    /**
+     * @param array $element
+     * @param string $related
+     * @return array
+     * @throws Exception
+     */
+    public function addToEntity(array $element,string $related): array
+    {
+        $data = $this->getSkeleton()
+            ->getRequest();
+        $data = $this->callbackBeforeEntityAdd($data,$element, $related);
+
+        $id = (int)$data['id'];
+        $r = [];
+        if ($this->Connect) {
+            if ($id >= 1) {
+                $r = $this->ToEntityAdd($data,$element, $related);
+                if ($r[0] >= 1) {
+                    $data = $this->callbackAfterEntityAdd($data,$element, $related);
+                    $m = ['info', 'Related item added'];
+                } else {
+                    $m = ['error', 'Access denied'];
+                }
+            }
+        } else {
+            $m = ['error', 'Database connection error'];
+        }
+
+        return [
+            'status' => $m[0],
+            'error' => 0,
+            'userid' => $this->getUserId(),
+            'fieldsId' => $this->getFieldsId(),
+            'result' => $r,
+            'id' => $r[0],
+            'condition' => $this->Condition,
+            'msg' => $this->translated($m[1]),
+        ];
+    }
+
     /**
      * @return array
      * @throws Exception
      */
     public function save(): array
     {
+
         $data = $this->getSkeleton()
             ->getRequest();
         $data = $this->callbackBeforeSave($data);
