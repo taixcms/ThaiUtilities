@@ -3197,9 +3197,20 @@ abstract class ThaiInterface
      */
     public function FieldType(array $field,array $data)
     {
+
         switch ($field['type']) {
             case 'double':
+                if(!empty($data[$field['columnName']])){
+                    return (double)$this->getItemValue($data[$field['columnName']], $field['columnName'])[0];
+                }else{
+                    return 0;
+                }
             case 'decimal':
+                if(!empty($data[$field['columnName']])){
+                    return (double)$this->getItemValue($data[$field['columnName']], $field['columnName'])[0];
+                }else{
+                    return 0;
+                }
             case 'tinyint':
             case 'boolean':
             case 'integer':
