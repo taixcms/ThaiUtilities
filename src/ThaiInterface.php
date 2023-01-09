@@ -1311,22 +1311,22 @@ abstract class ThaiInterface
                         $this->setAttachmentsStatus();
                     }
                 }
-
-                foreach ($rows as $key2=>$row3) {
-                    foreach ($class->associationMappings as $associationField) {
-                        if (!empty($rows[$key2][$associationField['fieldName']])) {
-                            if(!empty($rows[$key2][$associationField['fieldName']]) && count($rows[$key2][$associationField['fieldName']])>=1){
-                                foreach ($this->ReformatRowsEntityes($rows[$key2][$associationField['fieldName']]) as  $valueTargetEntitye) {
-                                    $newArray[$key2][$associationField['fieldName']][]=$valueTargetEntitye;
-                                }
-                            }else{
-                                $newArray[$key2][$associationField['fieldName']]=[];
-                            }
-                        }else{
-                            $newArray[$key2][$associationField['fieldName']]=[];
-                        }
-                    }
-                }
+ /* забирать данные из связанных сущьностей */
+//                foreach ($rows as $key2=>$row3) {
+//                    foreach ($class->associationMappings as $associationField) {
+//                        if (!empty($rows[$key2][$associationField['fieldName']])) {
+//                            if(!empty($rows[$key2][$associationField['fieldName']]) && count($rows[$key2][$associationField['fieldName']])>=1){
+//                                foreach ($this->ReformatRowsEntityes($rows[$key2][$associationField['fieldName']]) as  $valueTargetEntitye) {
+//                                    $newArray[$key2][$associationField['fieldName']][]=$valueTargetEntitye;
+//                                }
+//                            }else{
+//                                $newArray[$key2][$associationField['fieldName']]=[];
+//                            }
+//                        }else{
+//                            $newArray[$key2][$associationField['fieldName']]=[];
+//                        }
+//                    }
+//                }
 
                 if (!empty($newArray[$key]['attachments'])) {
                     $newArray[$key]['attachments'] = $this->getAttachments($newArray[$key]['attachments']);
@@ -1334,6 +1334,7 @@ abstract class ThaiInterface
                     $newArray[$key]['attachments'] = [];
                 }
                 $cFunc = $this->getCallBack();
+
                 $itemValue = $cFunc($newArray[$key]);
                 if ($itemValue) {
                     if (!empty($itemValue['id'])) {
