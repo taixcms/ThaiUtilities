@@ -1271,7 +1271,7 @@ abstract class ThaiInterface
             foreach ($rows as $key=>$row) {
                 $newArray[$key] = [];
                 foreach ($class->fieldMappings as $value) {
-                    if ($value['type'] === 'integer' && isset($row[$value['fieldName']])) {
+                     if ($value['type'] === 'integer' && isset($row[$value['fieldName']])) {
                         $newArray[$key][$value['columnName']] = (int)$row[$value['fieldName']];
                     }
                     if ($value['type'] === 'double' && isset($row[$value['fieldName']])) {
@@ -1282,6 +1282,15 @@ abstract class ThaiInterface
                     }
                     if ($value['type'] === 'tinyint' && isset($row[$value['fieldName']])) {
                         $newArray[$key][$value['columnName']] = (int)$row[$value['fieldName']];
+                    }
+                    if ($value['type'] === 'float' && isset($row[$value['fieldName']])) {
+                        $newArray[$key][$value['columnName']] = (int)$row[$value['fieldName']];
+                    }
+                    if ($value['type'] === 'smallint' && isset($row[$value['fieldName']])) {
+                        $newArray[$key][$value['columnName']] = (int)$row[$value['fieldName']];
+                    }
+                    if ($value['type'] === 'boolean' && isset($row[$value['fieldName']])) {
+                        $newArray[$key][$value['columnName']] = (bool)$row[$value['fieldName']];
                     }
                     if ($value['type'] === 'array' && isset($row[$value['fieldName']])) {
                         $newArray[$key][$value['columnName']] = explode('|', $row[$value['fieldName']]);
