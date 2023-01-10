@@ -3881,7 +3881,18 @@ abstract class ThaiInterface
         $data = $this->getSkeleton()
             ->getRequest();
         $data = $this->callbackBeforeSave($data);
-
+        if($data === null){
+            return [
+                'status' => 'info',
+                'error' => 0,
+                'userid' => $this->getUserId(),
+                'fieldsId' => $this->getFieldsId(),
+                'result' => null,
+                'id' => null,
+                'condition' => null,
+                'msg' => $this->translated('callbackBeforeSave return null'),
+            ];
+        }
         $id = (int)$data['id'];
         $r = [];
         if ($this->Connect) {
