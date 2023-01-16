@@ -106,6 +106,7 @@ abstract class ThaiInterface
     public function setConfig( $Config): ThaiInterface
     {
         self::$Config = $Config;
+        $this->setNameDataBase($Config->getDbName());
         return $this;
     }
 
