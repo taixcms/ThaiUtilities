@@ -1045,13 +1045,13 @@ abstract class ThaiInterface
                     $class = $this->getConfig()->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName());
                     foreach ($class->fieldMappings as $value) {
 
-                        if ($this->getDefaultFieldType($value['fieldName'])) {
-                            $fieldType = $this->getDefaultFieldType($value['fieldName']);
+                        if ($this->getDefaultFieldType($value['columnName'])) {
+                            $fieldType = $this->getDefaultFieldType($value['columnName']);
                         }else{
                             $fieldType = $value['type'];
                         }
 
-                        if ($value["fieldName"] === 'id') {
+                        if ($value["columnName"] === 'id') {
                             $this->setsortOrderFieldName('id');
                         }
 
@@ -1060,17 +1060,18 @@ abstract class ThaiInterface
                         }else{
                             $required = false;
                         }
-                        if ($value['fieldName'] === 'attachments') {
+                        if ($value['columnName'] === 'attachments') {
                             $this->setAttachmentsStatus();
                         }
-                        if ($value['fieldName'] === 'sortOrder') {
+                        if ($value['columnName'] === 'sortOrder') {
                             $this->setsortOrder('sortOrder');
                         }
+
                         $arr[] = array(
-                            "fieldName" => $value["fieldName"],
+                            "fieldName" => $value["columnName"],
                             "fieldType" => $fieldType,
                             "required"  => $required,
-                            "default"   => $this->getDefaultValue($value['fieldName'])
+                            "default"   => $this->getDefaultValue($value['columnName'])
                         );
 
                     }
