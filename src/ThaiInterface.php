@@ -1051,6 +1051,10 @@ abstract class ThaiInterface
                             $fieldType = $value['type'];
                         }
 
+                        if ($value["fieldName"] === 'id') {
+                            $this->setsortOrderFieldName('id');
+                        }
+
                         if(!empty($value['options']) && !empty($value['options']['comment']) && $value['options']['comment'] === 'required'){
                             $required = true;
                         }else{
@@ -1058,7 +1062,9 @@ abstract class ThaiInterface
                         }
                         if ($value['fieldName'] === 'attachments') {
                             $this->setAttachmentsStatus();
-                            $fieldType = 'array';
+                        }
+                        if ($value['fieldName'] === 'sortOrder') {
+                            $this->setsortOrder('sortOrder');
                         }
                         $arr[] = array(
                             "fieldName" => $value["fieldName"],
