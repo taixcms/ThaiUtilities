@@ -29,8 +29,13 @@ class ThaiGettingClass
     {
         spl_autoload_register(function ($class_name) use ($dirList) {
             foreach ($dirList as $value) {
-                if (file_exists( $value . DIRECTORY_SEPARATOR . $class_name . '.php')) {
-                    require( $value . DIRECTORY_SEPARATOR . $class_name . '.php');
+                if (strpos($class_name, 'StructureProvider') !== false) {
+                    $filePath = str_replace("\\", "/",  $value . DIRECTORY_SEPARATOR . $class_name . '.php');
+                } else {
+                    $filePath = $value . DIRECTORY_SEPARATOR . $class_name . '.php';
+                }
+                if (file_exists( $filePath)) {
+                    require( $filePath);
                     return true;
                 }
             }

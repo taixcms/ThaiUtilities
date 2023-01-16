@@ -989,14 +989,13 @@ abstract class ThaiInterface
                         $uRow['fieldType'] = 'varchar';
                     }
                     if (strpos($uRow['fieldType'], 'tinyint') !== false) {
-                        $uRow['fieldType'] = 'bool7777';
+                        $uRow['fieldType'] = 'tinyint';
                     }
-
                     if (strpos($uRow['fieldType'], 'int') !== false) {
                         $uRow['fieldType'] = 'int';
                     }
-                    if (strpos($uRow['fieldType'], 'bool7777') !== false) {
-                        $uRow['fieldType'] = 'tinyint';
+                    if (strpos($uRow['fieldType'], 'bool') !== false) {
+                        $uRow['fieldType'] = 'bool';
                     }
                     if (strpos($uRow['fieldType'], 'decimal') !== false) {
                         $uRow['fieldType'] = 'decimal';
@@ -1018,7 +1017,6 @@ abstract class ThaiInterface
                     $uRow['default'] = $this->getDefaultValue($uRow['fieldName']);
                     $arr[] = $uRow;
                 }
-
                 if($this->getEntityName() !== 'StructureProvider\\'){
                     foreach ($this->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings as $associationField) {
                         $arr[] = array(
@@ -1026,20 +1024,64 @@ abstract class ThaiInterface
                             "fieldType" => "array",
                             "required"  => false,
                             "default"   => NULL
-                          );
+                        );
                     }
                 }
 
+                $this->setSkeleton($this->getTableName(), $arr);
             } else {
-                $this->setData('error', array_merge($this->getData('error'), [[
-                    'method' => 'getSkeleton',
-                    'data' => [],
-                    'TableName' => $this->getTableName(),
-                    'key' => '>> ' . $this->getTableNameWhere() . ' << ' . $this->translated('dont table'),
-                    'msg' => $this->translated('this and other methods are called only for a class that has tables in the database, for intermediate classes you do not need to specify methods, this creates an extra load on the server'),
-                ]]));
+
+                if($this->getEntityName() !== 'StructureProvider\\'){
+
+                    foreach ($this->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings as $associationField) {
+                        $arr[] = array(
+                            "fieldName" => $associationField["fieldName"],
+                            "fieldType" => "array",
+                            "required"  => false,
+                            "default"   => NULL
+                        );
+                    }
+
+                    $class = $this->getConfig()->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName());
+                    foreach ($class->fieldMappings as $value) {
+
+                        if ($this->getDefaultFieldType($value['fieldName'])) {
+                            $fieldType = $this->getDefaultFieldType($value['fieldName']);
+                        }else{
+                            $fieldType = $value['type'];
+                        }
+
+                        if(!empty($value['options']) && !empty($value['options']['comment']) && $value['options']['comment'] === 'required'){
+                            $required = true;
+                        }else{
+                            $required = false;
+                        }
+                        if ($value['fieldName'] === 'attachments') {
+                            $this->setAttachmentsStatus();
+                            $fieldType = 'array';
+                        }
+                        $arr[] = array(
+                            "fieldName" => $value["fieldName"],
+                            "fieldType" => $fieldType,
+                            "required"  => $required,
+                            "default"   => $this->getDefaultValue($value['fieldName'])
+                        );
+
+                    }
+
+                    $this->setSkeleton($this->getTableName(), $arr);
+                }else{
+                    $this->setData('error', array_merge($this->getData('error'), [[
+                        'method' => 'getSkeleton',
+                        'data' => [],
+                        'TableName' => $this->getTableName(),
+                        'key' => '>> ' . $this->getTableNameWhere() . ' << ' . $this->translated('dont table'),
+                        'msg' => $this->translated('this and other methods are called only for a class that has tables in the database, for intermediate classes you do not need to specify methods, this creates an extra load on the server'),
+                    ]]));
+                }
+
             }
-            $this->setSkeleton($this->getTableName(), $arr);
+
         }
         return $this;
     }
@@ -1272,7 +1314,7 @@ abstract class ThaiInterface
             foreach ($rows as $key=>$row) {
                 $newArray[$key] = [];
                 foreach ($class->fieldMappings as $value) {
-                     if ($value['type'] === 'integer' && isset($row[$value['fieldName']])) {
+                    if ($value['type'] === 'integer' && isset($row[$value['fieldName']])) {
                         $newArray[$key][$value['columnName']] = (int)$row[$value['fieldName']];
                     }
                     if ($value['type'] === 'double' && isset($row[$value['fieldName']])) {
@@ -1321,7 +1363,7 @@ abstract class ThaiInterface
                         $this->setAttachmentsStatus();
                     }
                 }
- /* забирать данные из связанных сущьностей */
+                /* забирать данные из связанных сущьностей */
 //                foreach ($rows as $key2=>$row3) {
 //                    foreach ($class->associationMappings as $associationField) {
 //                        if (!empty($rows[$key2][$associationField['fieldName']])) {
@@ -1373,6 +1415,7 @@ abstract class ThaiInterface
         $arr = [];
         if ($rows) {
             foreach ($rows as $row) {
+
                 foreach ($this->Skeleton[$this->getTableName()] as $value) {
                     if ($value['fieldType'] === 'int' && isset($row[$value['fieldName']])) {
                         $row[$value['fieldName']] = (int)$row[$value['fieldName']];
@@ -2226,8 +2269,8 @@ abstract class ThaiInterface
         $arr = $hydrator->extract($entityObject);
         return $arr;
     }
-    
-    
+
+
     /**
      * @param int|string $id
      * @param string|null $key
@@ -2253,12 +2296,12 @@ abstract class ThaiInterface
 //            ));
 //        }
         //if($isNotMapping){
-            $qb->andWhere($qb->expr()->in('A.id', ':id'));
-       // }
-            foreach ($this->ReformatRowsEntityes( $qb->getQuery()->getArrayResult() ) as $one) {
-                    $this->setData($key ?: $this->getTableName(), $one);
-                return $this;
-            }
+        $qb->andWhere($qb->expr()->in('A.id', ':id'));
+        // }
+        foreach ($this->ReformatRowsEntityes( $qb->getQuery()->getArrayResult() ) as $one) {
+            $this->setData($key ?: $this->getTableName(), $one);
+            return $this;
+        }
         $this->setData($key ?: $this->getTableName(), null);
         return $this;
     }
@@ -2425,14 +2468,14 @@ abstract class ThaiInterface
 //                $qb->expr()->isNull('N'.$associationField['fieldName'].'.userid')
 //            ));
 //        }
-       // if($isNotMapping){
-            $qb->andWhere($qb->expr()->in('A.userid', ':userid'));
+        // if($isNotMapping){
+        $qb->andWhere($qb->expr()->in('A.userid', ':userid'));
         //}
 
-            foreach ($this->ReformatRowsEntityes( $qb->getQuery()->getArrayResult() ) as $one) {
-                $this->setData($key ?: $this->getTableName(), $one);
-                return $this;
-            }
+        foreach ($this->ReformatRowsEntityes( $qb->getQuery()->getArrayResult() ) as $one) {
+            $this->setData($key ?: $this->getTableName(), $one);
+            return $this;
+        }
         $this->setData($key ?: $this->getTableName(), null);
         return $this;
     }
@@ -3334,13 +3377,13 @@ abstract class ThaiInterface
 
     public function saveEntity($Entity):ThaiInterface
     {
-            $entityManager = $this->getEm();
-            $entityManager->persist($Entity);
-            $entityManager->flush();
-            $entityManager->clear();
-            return $this;
+        $entityManager = $this->getEm();
+        $entityManager->persist($Entity);
+        $entityManager->flush();
+        $entityManager->clear();
+        return $this;
     }
-    
+
     /**
      * @param array $data
      * @return array
