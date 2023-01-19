@@ -4193,14 +4193,13 @@ abstract class ThaiInterface
      */
     function base64_to_jpeg($base64_string): string
     {
-
         $md5_file = md5($base64_string);
-        $path = "./uploads/files/" . substr($md5_file, 0, 1) . "/" . substr($md5_file, 1, 1) . "/" . substr($md5_file, 2, 1) . "/" . substr($md5_file, 3, 1) . "/" . substr($md5_file, 4, 1);
+        $path = $_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'files'.DIRECTORY_SEPARATOR. substr($md5_file, 0, 1) . DIRECTORY_SEPARATOR . substr($md5_file, 1, 1) . DIRECTORY_SEPARATOR . substr($md5_file, 2, 1) . DIRECTORY_SEPARATOR . substr($md5_file, 3, 1) . DIRECTORY_SEPARATOR . substr($md5_file, 4, 1);
         if (!file_exists($path)) {
             mkdir($path, 0777, true);
         }
         $avatar = $md5_file . ".jpg";
-        $imageFile = $path . "/" . $md5_file . ".jpg";
+        $imageFile = $path . DIRECTORY_SEPARATOR . $md5_file . ".jpg";
         // split the string on commas
         // $data[ 0 ] == "data:image/png;base64"
         // $data[ 1 ] == <actual base64 string>
