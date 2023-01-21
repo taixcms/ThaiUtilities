@@ -1309,10 +1309,106 @@ abstract class ThaiInterface
 
     /**
      * @param array|null $rows
+     * @param string|null $entityName
      * @return array
      * @throws Exception
      */
-    public function ReformatRowsEntityes(array $rows = null): ?array
+    public function ReformatRowsEntityes(array $rows = null, string $entityName = null): ?array
+    {
+        if($entityName === null){
+            $entityName = $this->getEntityName();
+        }
+        $class = $this->getConfig()->getEm()->getMetadataFactory()->getMetadataFor($entityName);
+        $arr = [];
+        if ($rows) {
+            $newArray = [];
+            foreach ($rows as $key=>$row) {
+                $newArray[$key] = [];
+                foreach ($class->fieldMappings as $value) {
+
+                    if((isset($row[$value['fieldName']]) || isset($row[$value['columnName']]))){
+
+                        if ($value['type'] === 'integer') {
+                            $newArray[$key][$value['columnName']] = (int)$row[$value['fieldName']];
+                        }
+                        if ($value['type'] === 'double') {
+                            $newArray[$key][$value['columnName']] = (double)$row[$value['fieldName']];
+                        }
+                        if ($value['type'] === 'decimal') {
+                            $newArray[$key][$value['columnName']] = (double)$row[$value['fieldName']];
+                        }
+                        if ($value['type'] === 'tinyint') {
+                            $newArray[$key][$value['columnName']] = (int)$row[$value['fieldName']];
+                        }
+                        if ($value['type'] === 'float') {
+                            $newArray[$key][$value['columnName']] = (int)$row[$value['fieldName']];
+                        }
+                        if ($value['type'] === 'smallint') {
+                            $newArray[$key][$value['columnName']] = (int)$row[$value['fieldName']];
+                        }
+                        if ($value['type'] === 'boolean') {
+                            $newArray[$key][$value['columnName']] = (bool)$row[$value['fieldName']];
+                        }
+                        if ($value['type'] === 'array') {
+                            $newArray[$key][$value['columnName']] = explode('|', $row[$value['fieldName']]);
+                        }
+                        if ($value['type'] === 'varchar') {
+                            $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
+                        }
+                        if ($value['type'] === 'text') {
+                            $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
+                        }
+                        if ($value['type'] === 'date') {
+                            $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('Y-m-d'));
+                        }
+                        if ($value['type'] === 'datetime') {
+                            $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('Y-m-d H:i:s'));
+                        }
+                        if ($value['type'] === 'time') {
+                            $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('H:i:s'));
+                        }
+
+                        if ($value['type'] === 'string') {
+                            $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
+                        }
+                        if ($value['type'] === 'mediumtext') {
+                            $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
+                        }
+                    }
+                    if ($value['columnName'] === 'attachments') {
+                        $this->setAttachmentsStatus();
+                    }
+                }
+
+                if (!empty($newArray[$key]['attachments'])) {
+                    $newArray[$key]['attachments'] = $this->getAttachments($newArray[$key]['attachments']);
+                } else {
+                    $newArray[$key]['attachments'] = [];
+                }
+                $cFunc = $this->getCallBack();
+
+                $itemValue = $cFunc($newArray[$key]);
+                if ($itemValue) {
+                    if (!empty($itemValue['id'])) {
+                        $this->setIDs($itemValue['id']);
+                    }
+                    $Permission = $this->checkPermission($itemValue, 'viewItem');
+                    if ($Permission) {
+                        $this->setConditionToDataObject($itemValue);
+                        $arr[] = $itemValue;
+                    }
+                }
+
+            }
+        }
+        return $arr;
+    }
+    /**
+     * @param array|null $rows
+     * @return array
+     * @throws Exception
+     */
+    public function ReformatRowsAndAssociationEntityes(array $rows = null): ?array
     {
         $class = $this->getConfig()->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName());
         $arr = [];
@@ -1371,21 +1467,21 @@ abstract class ThaiInterface
                     }
                 }
                 /* забирать данные из связанных сущьностей */
-//                foreach ($rows as $key2=>$row3) {
-//                    foreach ($class->associationMappings as $associationField) {
-//                        if (!empty($rows[$key2][$associationField['fieldName']])) {
-//                            if(!empty($rows[$key2][$associationField['fieldName']]) && count($rows[$key2][$associationField['fieldName']])>=1){
-//                                foreach ($this->ReformatRowsEntityes($rows[$key2][$associationField['fieldName']]) as  $valueTargetEntitye) {
-//                                    $newArray[$key2][$associationField['fieldName']][]=$valueTargetEntitye;
-//                                }
-//                            }else{
-//                                $newArray[$key2][$associationField['fieldName']]=[];
-//                            }
-//                        }else{
-//                            $newArray[$key2][$associationField['fieldName']]=[];
-//                        }
-//                    }
-//                }
+                foreach ($rows as $key2=>$row3) {
+                    foreach ($class->associationMappings as $associationField) {
+                        if (!empty($rows[$key2][$associationField['fieldName']])) {
+                            if(!empty($rows[$key2][$associationField['fieldName']]) && count($rows[$key2][$associationField['fieldName']])>=1){
+                                foreach ($this->ReformatRowsEntityes($rows[$key2][$associationField['fieldName']],$associationField["targetEntity"]) as  $valueTargetEntitye) {
+                                    $newArray[$key2][$associationField['fieldName']][]=$valueTargetEntitye;
+                                }
+                            }else{
+                                $newArray[$key2][$associationField['fieldName']]=[];
+                            }
+                        }else{
+                            $newArray[$key2][$associationField['fieldName']]=[];
+                        }
+                    }
+                }
 
                 if (!empty($newArray[$key]['attachments'])) {
                     $newArray[$key]['attachments'] = $this->getAttachments($newArray[$key]['attachments']);
@@ -2277,6 +2373,78 @@ abstract class ThaiInterface
         return $arr;
     }
 
+
+    /**
+     * @param int|string $id
+     * @param string|null $key
+     * @return $this
+     * @throws Exception
+     */
+    public function ItemAndAssociationByUserID($id, string $key = NULL): ThaiInterface
+    {
+
+        $qb = $this->getConfig()->getEm()->createQueryBuilder();
+        $qb->select( ['A'] )->from( $this->getEntityName(), 'A')->setParameter(':id', $id);
+
+        $isNotMapping = true;
+        foreach ($this->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings as $associationField) {
+            $isNotMapping = false;
+            $qb->addSelect( ['N'.$associationField['fieldName']] )->leftJoin('A.'.$associationField['fieldName'], 'N'.$associationField['fieldName']);
+            $qb->andWhere($qb->expr()->orX(
+                $qb->expr()->andX(
+                    $qb->expr()->in('A.userid', ':id'),
+                    $qb->expr()->isNotNull('N'.$associationField['fieldName'].'.id')
+                ),
+                $qb->expr()->isNull('N'.$associationField['fieldName'].'.id')
+            ));
+        }
+        if($isNotMapping){
+            $qb->andWhere($qb->expr()->in('A.userid', ':id'));
+        }
+
+        foreach ($this->ReformatRowsAndAssociationEntityes( $qb->getQuery()->getArrayResult() ) as $one) {
+            $this->setData($key ?: $this->getTableName(), $one);
+            return $this;
+        }
+        $this->setData($key ?: $this->getTableName(), null);
+        return $this;
+    }
+
+    /**
+     * @param int|string $id
+     * @param string|null $key
+     * @return $this
+     * @throws Exception
+     */
+    public function ItemAndAssociationByID($id, string $key = NULL): ThaiInterface
+    {
+
+        $qb = $this->getConfig()->getEm()->createQueryBuilder();
+        $qb->select( ['A'] )->from( $this->getEntityName(), 'A')->setParameter(':id', $id);
+
+        $isNotMapping = true;
+        foreach ($this->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings as $associationField) {
+            $isNotMapping = false;
+            $qb->addSelect( ['N'.$associationField['fieldName']] )->leftJoin('A.'.$associationField['fieldName'], 'N'.$associationField['fieldName']);
+            $qb->andWhere($qb->expr()->orX(
+                $qb->expr()->andX(
+                    $qb->expr()->in('A.id', ':id'),
+                    $qb->expr()->isNotNull('N'.$associationField['fieldName'].'.id')
+                ),
+                $qb->expr()->isNull('N'.$associationField['fieldName'].'.id')
+            ));
+        }
+        if($isNotMapping){
+            $qb->andWhere($qb->expr()->in('A.id', ':id'));
+        }
+
+        foreach ($this->ReformatRowsAndAssociationEntityes( $qb->getQuery()->getArrayResult() ) as $one) {
+            $this->setData($key ?: $this->getTableName(), $one);
+            return $this;
+        }
+        $this->setData($key ?: $this->getTableName(), null);
+        return $this;
+    }
 
     /**
      * @param int|string $id
@@ -3879,6 +4047,29 @@ abstract class ThaiInterface
             'id' => $r[0],
             'condition' => $this->Condition,
             'msg' => $this->translated($m[1]),
+        ];
+    }
+    /**
+     * @param array $elementArrey
+     * @param string $related
+     * @return array
+     * @throws Exception
+     */
+    public function addArrayToEntity(array $elementArrey,string $related): array
+    {
+        $m = [];
+        foreach ( $elementArrey as $value ) {
+            $m[] = $this->addToEntity($value,$related);
+        }
+        return [
+            'status' => 'info',
+            'error' => 0,
+            'userid' => $this->getUserId(),
+            'fieldsId' => null,
+            'result' => $m,
+            'id' => null,
+            'condition' => $this->Condition,
+            'msg' => $this->translated('Action completed'),
         ];
     }
 
