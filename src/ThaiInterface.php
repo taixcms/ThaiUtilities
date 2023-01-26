@@ -1326,7 +1326,7 @@ abstract class ThaiInterface
                 $newArray[$key] = [];
                 foreach ($class->fieldMappings as $value) {
 
-                    if((isset($row[$value['fieldName']]) || isset($row[$value['columnName']]))){
+
 
                         if ($value['type'] === 'integer') {
                             $newArray[$key][$value['columnName']] = (int)$row[$value['fieldName']];
@@ -1374,7 +1374,7 @@ abstract class ThaiInterface
                         if ($value['type'] === 'mediumtext') {
                             $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
                         }
-                    }
+
                     if ($value['columnName'] === 'attachments') {
                         $this->setAttachmentsStatus();
                     }
@@ -1573,9 +1573,9 @@ abstract class ThaiInterface
                 /* забирать данные из связанных сущьностей */
                 foreach ($rows as $key2=>$row3) {
                     foreach ($class->associationMappings as $associationField) {
+
                         if (!empty($rows[$key2][$associationField['fieldName']])) {
                             if(!empty($rows[$key2][$associationField['fieldName']]) && count($rows[$key2][$associationField['fieldName']])>=1){
-
                                 foreach ($this->ReformatRowsAndManyAssociationEntityes($rows[$key2][$associationField['fieldName']],$associationField["targetEntity"]) as  $valueTargetEntitye) {
                                     $newArray[$key2][$associationField['fieldName']][]=$valueTargetEntitye;
                                 }
