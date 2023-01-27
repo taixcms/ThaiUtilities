@@ -1359,16 +1359,22 @@ abstract class ThaiInterface
                         if ($value['type'] === 'date') {
                             if(get_class($row[$value['fieldName']]) === 'DateTime') {
                                 $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('Y-m-d'));
+                            }else{
+                                $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
                             }
                         }
                         if ($value['type'] === 'datetime') {
                             if(get_class($row[$value['fieldName']]) === 'DateTime') {
                                 $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('Y-m-d H:i:s'));
+                            }else{
+                                $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
                             }
                         }
                         if ($value['type'] === 'time') {
                             if(get_class($row[$value['fieldName']]) === 'DateTime') {
                                 $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('H:i:s'));
+                            }else{
+                                $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
                             }
 
                         }
@@ -1455,16 +1461,22 @@ abstract class ThaiInterface
                     if ($value['type'] === 'date') {
                         if(get_class($row[$value['fieldName']]) === 'DateTime') {
                             $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('Y-m-d'));
+                        }else{
+                            $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
                         }
                     }
                     if ($value['type'] === 'datetime') {
                         if(get_class($row[$value['fieldName']]) === 'DateTime') {
                             $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('Y-m-d H:i:s'));
+                        }else{
+                            $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
                         }
                     }
                     if ($value['type'] === 'time') {
                         if(get_class($row[$value['fieldName']]) === 'DateTime') {
                             $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('H:i:s'));
+                        }else{
+                            $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
                         }
                     }
                     if ($value['type'] === 'string' && isset($row[$value['fieldName']])) {
