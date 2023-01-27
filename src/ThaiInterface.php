@@ -1481,7 +1481,7 @@ abstract class ThaiInterface
                     foreach ($class->associationMappings as $associationField) {
                         if (!empty($rows[$key][$associationField['fieldName']])) {
                             if(!empty($rows[$key][$associationField['fieldName']]) && count($rows[$key][$associationField['fieldName']])>=1){
-                                    $newArray[$key][$associationField['fieldName']][]=$rows[$key][$associationField['fieldName']];
+                                    $newArray[$key][$associationField['fieldName']]=$rows[$key][$associationField['fieldName']];
                             }else{
                                 $newArray[$key][$associationField['fieldName']]=[];
                             }
@@ -1576,21 +1576,17 @@ abstract class ThaiInterface
                         $this->setAttachmentsStatus();
                     }
                 }
-                /* забирать данные из связанных сущьностей */
-                foreach ($rows as $key2=>$row3) {
-                    foreach ($class->associationMappings as $associationField) {
 
-                        if (!empty($rows[$key2][$associationField['fieldName']])) {
-                            if(!empty($rows[$key2][$associationField['fieldName']]) && count($rows[$key2][$associationField['fieldName']])>=1){
-                                foreach ($this->ReformatRowsAndManyAssociationEntityes($rows[$key2][$associationField['fieldName']],$associationField["targetEntity"]) as  $valueTargetEntitye) {
-                                    $newArray[$key2][$associationField['fieldName']][]=$valueTargetEntitye;
-                                }
-                            }else{
-                                $newArray[$key2][$associationField['fieldName']]=[];
-                            }
+                /* забирать данные из связанных сущьностей */
+                foreach ($class->associationMappings as $associationField) {
+                    if (!empty($rows[$key][$associationField['fieldName']])) {
+                        if(!empty($rows[$key][$associationField['fieldName']]) && count($rows[$key][$associationField['fieldName']])>=1){
+                            $newArray[$key][$associationField['fieldName']]=$rows[$key][$associationField['fieldName']];
                         }else{
-                            $newArray[$key2][$associationField['fieldName']]=[];
+                            $newArray[$key][$associationField['fieldName']]=[];
                         }
+                    }else{
+                        $newArray[$key][$associationField['fieldName']]=[];
                     }
                 }
 
