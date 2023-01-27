@@ -1326,8 +1326,6 @@ abstract class ThaiInterface
                 $newArray[$key] = [];
                 foreach ($class->fieldMappings as $value) {
 
-
-
                         if ($value['type'] === 'integer') {
                             $newArray[$key][$value['columnName']] = (int)$row[$value['fieldName']];
                         }
@@ -1359,13 +1357,20 @@ abstract class ThaiInterface
                             $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
                         }
                         if ($value['type'] === 'date') {
-                            $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('Y-m-d'));
+                            if(is_subclass_of($row[$value['fieldName']],DateTime::class)) {
+                                $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('Y-m-d'));
+                            }
                         }
                         if ($value['type'] === 'datetime') {
-                            $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('Y-m-d H:i:s'));
+                            if(is_subclass_of($row[$value['fieldName']],DateTime::class)){
+                                $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('Y-m-d H:i:s'));
+                            }
                         }
                         if ($value['type'] === 'time') {
-                            $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('H:i:s'));
+                            if(is_subclass_of($row[$value['fieldName']],DateTime::class)){
+                                $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('H:i:s'));
+                            }
+
                         }
 
                         if ($value['type'] === 'string') {
@@ -1447,14 +1452,20 @@ abstract class ThaiInterface
                     if ($value['type'] === 'text' && isset($row[$value['fieldName']])) {
                         $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
                     }
-                    if ($value['type'] === 'date' && isset($row[$value['fieldName']])) {
-                        $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('Y-m-d'));
+                    if ($value['type'] === 'date') {
+                        if(is_subclass_of($row[$value['fieldName']],DateTime::class)) {
+                            $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('Y-m-d'));
+                        }
                     }
-                    if ($value['type'] === 'datetime' && isset($row[$value['fieldName']])) {
-                        $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('Y-m-d H:i:s'));
+                    if ($value['type'] === 'datetime') {
+                        if(is_subclass_of($row[$value['fieldName']],DateTime::class)){
+                            $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('Y-m-d H:i:s'));
+                        }
                     }
-                    if ($value['type'] === 'time' && isset($row[$value['fieldName']])) {
-                        $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('H:i:s'));
+                    if ($value['type'] === 'time') {
+                        if(is_subclass_of($row[$value['fieldName']],DateTime::class)){
+                            $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('H:i:s'));
+                        }
                     }
                     if ($value['type'] === 'string' && isset($row[$value['fieldName']])) {
                         $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
@@ -1467,22 +1478,17 @@ abstract class ThaiInterface
                     }
                 }
                 /* забирать данные из связанных сущьностей */
-                foreach ($rows as $key2=>$row3) {
                     foreach ($class->associationMappings as $associationField) {
-                        if (!empty($rows[$key2][$associationField['fieldName']])) {
-                            if(!empty($rows[$key2][$associationField['fieldName']]) && count($rows[$key2][$associationField['fieldName']])>=1){
-                                foreach ($this->ReformatRowsEntityes($rows[$key2][$associationField['fieldName']],$associationField["targetEntity"]) as  $valueTargetEntitye) {
-                                    $newArray[$key2][$associationField['fieldName']][]=$valueTargetEntitye;
-                                }
+                        if (!empty($rows[$key][$associationField['fieldName']])) {
+                            if(!empty($rows[$key][$associationField['fieldName']]) && count($rows[$key][$associationField['fieldName']])>=1){
+                                    $newArray[$key][$associationField['fieldName']][]=$rows[$key][$associationField['fieldName']];
                             }else{
-                                $newArray[$key2][$associationField['fieldName']]=[];
+                                $newArray[$key][$associationField['fieldName']]=[];
                             }
                         }else{
-                            $newArray[$key2][$associationField['fieldName']]=[];
+                            $newArray[$key][$associationField['fieldName']]=[];
                         }
                     }
-                }
-
                 if (!empty($newArray[$key]['attachments'])) {
                     $newArray[$key]['attachments'] = $this->getAttachments($newArray[$key]['attachments']);
                 } else {
