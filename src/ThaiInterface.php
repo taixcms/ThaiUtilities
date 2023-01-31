@@ -1307,6 +1307,107 @@ abstract class ThaiInterface
         return $sql;
     }
 
+
+    public function ReformatFieldEntityes(array $row = null,array $value = null,$key)
+    {
+        if(array_key_exists($value['fieldName'],$row)){
+            $fieldName = $value['fieldName'];
+        }
+
+        if(array_key_exists($value['columnName'],$row)){
+            $fieldName = $value['columnName'];
+        }
+
+        if(empty($fieldName)){
+            $fieldName = $value['columnName'];
+        }
+
+        if(array_key_exists($fieldName,$row) && $row[$fieldName] !== null){
+            if ($value['type'] === 'integer') {
+                return (int)$row[$fieldName];
+            }
+            if ($value['type'] === 'double') {
+                return (double)$row[$fieldName];
+            }
+            if ($value['type'] === 'decimal') {
+                return(double)$row[$fieldName];
+            }
+            if ($value['type'] === 'tinyint') {
+                return (int)$row[$fieldName];
+            }
+            if ($value['type'] === 'float') {
+                return (int)$row[$fieldName];
+            }
+            if ($value['type'] === 'smallint') {
+                return (int)$row[$fieldName];
+            }
+            if ($value['type'] === 'boolean') {
+                return (bool)$row[$fieldName];
+            }
+            if ($value['type'] === 'array') {
+                return explode('|', $row[$fieldName]);
+            }
+            if ($value['type'] === 'varchar') {
+                return ''.$row[$fieldName];
+            }
+            if ($value['type'] === 'text') {
+                return ''.$row[$fieldName];
+            }
+            if ($value['type'] === 'date') {
+                if(get_class($row[$fieldName]) === 'DateTime') {
+                    return$row[$fieldName]->format('Y-m-d');
+                }else{
+                    return $row[$fieldName];
+                }
+            }
+            if ($value['type'] === 'datetime') {
+                if(get_class($row[$fieldName]) === 'DateTime') {
+                    return $row[$fieldName]->format('Y-m-d H:i:s');
+                }else{
+                    return $row[$fieldName];
+                }
+            }
+            if ($value['type'] === 'time') {
+                if(get_class($row[$fieldName]) === 'DateTime') {
+                    return $row[$fieldName]->format('H:i:s');
+                }else{
+                    return $row[$fieldName];
+                }
+
+            }
+            if ($value['type'] === 'string') {
+                return ''.$row[$fieldName];
+            }
+            if ($value['type'] === 'mediumtext') {
+                return ''.$row[$fieldName];
+            }
+            if ($value['columnName'] === 'attachments') {
+                $this->setAttachmentsStatus();
+            }
+        }else{
+            if($value["nullable"]){
+                if(!empty($value["options"]) && !empty($value["options"])){
+                    foreach ($value["options"] as $optionKey=>$optionValue) {
+                        if($optionKey === 'default'){
+                            return $optionValue;
+                        }
+                    }
+                }
+                return null;
+            }else{
+                if(!empty($value["options"]) && !empty($value["options"])){
+                    foreach ($value["options"] as $optionKey=>$optionValue) {
+                        if($optionKey === 'default'){
+                            return $optionValue;
+                        }
+                    }
+                }
+                return $this->FieldType($value,$row);
+            }
+        }
+        return null;
+    }
+
     /**
      * @param array|null $rows
      * @param string|null $entityName
@@ -1325,70 +1426,7 @@ abstract class ThaiInterface
             foreach ($rows as $key=>$row) {
                 $newArray[$key] = [];
                 foreach ($class->fieldMappings as $value) {
-
-                        if ($value['type'] === 'integer') {
-                            $newArray[$key][$value['columnName']] = (int)$row[$value['fieldName']];
-                        }
-                        if ($value['type'] === 'double') {
-                            $newArray[$key][$value['columnName']] = (double)$row[$value['fieldName']];
-                        }
-                        if ($value['type'] === 'decimal') {
-                            $newArray[$key][$value['columnName']] = (double)$row[$value['fieldName']];
-                        }
-                        if ($value['type'] === 'tinyint') {
-                            $newArray[$key][$value['columnName']] = (int)$row[$value['fieldName']];
-                        }
-                        if ($value['type'] === 'float') {
-                            $newArray[$key][$value['columnName']] = (int)$row[$value['fieldName']];
-                        }
-                        if ($value['type'] === 'smallint') {
-                            $newArray[$key][$value['columnName']] = (int)$row[$value['fieldName']];
-                        }
-                        if ($value['type'] === 'boolean') {
-                            $newArray[$key][$value['columnName']] = (bool)$row[$value['fieldName']];
-                        }
-                        if ($value['type'] === 'array') {
-                            $newArray[$key][$value['columnName']] = explode('|', $row[$value['fieldName']]);
-                        }
-                        if ($value['type'] === 'varchar') {
-                            $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
-                        }
-                        if ($value['type'] === 'text') {
-                            $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
-                        }
-                        if ($value['type'] === 'date') {
-                            if(get_class($row[$value['fieldName']]) === 'DateTime') {
-                                $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('Y-m-d'));
-                            }else{
-                                $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
-                            }
-                        }
-                        if ($value['type'] === 'datetime') {
-                            if(get_class($row[$value['fieldName']]) === 'DateTime') {
-                                $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('Y-m-d H:i:s'));
-                            }else{
-                                $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
-                            }
-                        }
-                        if ($value['type'] === 'time') {
-                            if(get_class($row[$value['fieldName']]) === 'DateTime') {
-                                $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('H:i:s'));
-                            }else{
-                                $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
-                            }
-
-                        }
-
-                        if ($value['type'] === 'string') {
-                            $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
-                        }
-                        if ($value['type'] === 'mediumtext') {
-                            $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
-                        }
-
-                    if ($value['columnName'] === 'attachments') {
-                        $this->setAttachmentsStatus();
-                    }
+                    $newArray[$key][$value['columnName']] = $this->ReformatFieldEntityes($row,$value,$key);
                 }
 
                 if (!empty($newArray[$key]['attachments'])) {
@@ -1428,68 +1466,8 @@ abstract class ThaiInterface
             foreach ($rows as $key=>$row) {
                 $newArray[$key] = [];
                 foreach ($class->fieldMappings as $value) {
-                    if ($value['type'] === 'integer' && isset($row[$value['fieldName']])) {
-                        $newArray[$key][$value['columnName']] = (int)$row[$value['fieldName']];
-                    }
-                    if ($value['type'] === 'double' && isset($row[$value['fieldName']])) {
-                        $newArray[$key][$value['columnName']] = (double)$row[$value['fieldName']];
-                    }
-                    if ($value['type'] === 'decimal' && isset($row[$value['fieldName']])) {
-                        $newArray[$key][$value['columnName']] = (double)$row[$value['fieldName']];
-                    }
-                    if ($value['type'] === 'tinyint' && isset($row[$value['fieldName']])) {
-                        $newArray[$key][$value['columnName']] = (int)$row[$value['fieldName']];
-                    }
-                    if ($value['type'] === 'float' && isset($row[$value['fieldName']])) {
-                        $newArray[$key][$value['columnName']] = (int)$row[$value['fieldName']];
-                    }
-                    if ($value['type'] === 'smallint' && isset($row[$value['fieldName']])) {
-                        $newArray[$key][$value['columnName']] = (int)$row[$value['fieldName']];
-                    }
-                    if ($value['type'] === 'boolean' && isset($row[$value['fieldName']])) {
-                        $newArray[$key][$value['columnName']] = (bool)$row[$value['fieldName']];
-                    }
-                    if ($value['type'] === 'array' && isset($row[$value['fieldName']])) {
-                        $newArray[$key][$value['columnName']] = explode('|', $row[$value['fieldName']]);
-                    }
-                    if ($value['type'] === 'varchar' && isset($row[$value['fieldName']])) {
-                        $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
-                    }
-                    if ($value['type'] === 'text' && isset($row[$value['fieldName']])) {
-                        $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
-                    }
-                    if ($value['type'] === 'date') {
-                        if(get_class($row[$value['fieldName']]) === 'DateTime') {
-                            $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('Y-m-d'));
-                        }else{
-                            $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
-                        }
-                    }
-                    if ($value['type'] === 'datetime') {
-                        if(get_class($row[$value['fieldName']]) === 'DateTime') {
-                            $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('Y-m-d H:i:s'));
-                        }else{
-                            $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
-                        }
-                    }
-                    if ($value['type'] === 'time') {
-                        if(get_class($row[$value['fieldName']]) === 'DateTime') {
-                            $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('H:i:s'));
-                        }else{
-                            $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
-                        }
-                    }
-                    if ($value['type'] === 'string' && isset($row[$value['fieldName']])) {
-                        $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
-                    }
-                    if ($value['type'] === 'mediumtext' && isset($row[$value['fieldName']])) {
-                        $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
-                    }
-                    if ($value['columnName'] === 'attachments') {
-                        $this->setAttachmentsStatus();
-                    }
+                    $newArray[$key][$value['columnName']] = $this->ReformatFieldEntityes($row,$value,$key);
                 }
-                /* забирать данные из связанных сущьностей */
                     foreach ($class->associationMappings as $associationField) {
                         if (!empty($rows[$key][$associationField['fieldName']])) {
                             if(!empty($rows[$key][$associationField['fieldName']]) && count($rows[$key][$associationField['fieldName']])>=1){
@@ -1539,54 +1517,7 @@ abstract class ThaiInterface
             foreach ($rows as $key=>$row) {
                 $newArray[$key] = [];
                 foreach ($class->fieldMappings as $value) {
-                    if ($value['type'] === 'integer' && isset($row[$value['fieldName']])) {
-                        $newArray[$key][$value['columnName']] = (int)$row[$value['fieldName']];
-                    }
-                    if ($value['type'] === 'double' && isset($row[$value['fieldName']])) {
-                        $newArray[$key][$value['columnName']] = (double)$row[$value['fieldName']];
-                    }
-                    if ($value['type'] === 'decimal' && isset($row[$value['fieldName']])) {
-                        $newArray[$key][$value['columnName']] = (double)$row[$value['fieldName']];
-                    }
-                    if ($value['type'] === 'tinyint' && isset($row[$value['fieldName']])) {
-                        $newArray[$key][$value['columnName']] = (int)$row[$value['fieldName']];
-                    }
-                    if ($value['type'] === 'float' && isset($row[$value['fieldName']])) {
-                        $newArray[$key][$value['columnName']] = (int)$row[$value['fieldName']];
-                    }
-                    if ($value['type'] === 'smallint' && isset($row[$value['fieldName']])) {
-                        $newArray[$key][$value['columnName']] = (int)$row[$value['fieldName']];
-                    }
-                    if ($value['type'] === 'boolean' && isset($row[$value['fieldName']])) {
-                        $newArray[$key][$value['columnName']] = (bool)$row[$value['fieldName']];
-                    }
-                    if ($value['type'] === 'array' && isset($row[$value['fieldName']])) {
-                        $newArray[$key][$value['columnName']] = explode('|', $row[$value['fieldName']]);
-                    }
-                    if ($value['type'] === 'varchar' && isset($row[$value['fieldName']])) {
-                        $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
-                    }
-                    if ($value['type'] === 'text' && isset($row[$value['fieldName']])) {
-                        $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
-                    }
-                    if ($value['type'] === 'date' && isset($row[$value['fieldName']])) {
-                        $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('Y-m-d'));
-                    }
-                    if ($value['type'] === 'datetime' && isset($row[$value['fieldName']])) {
-                        $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('Y-m-d H:i:s'));
-                    }
-                    if ($value['type'] === 'time' && isset($row[$value['fieldName']])) {
-                        $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]->format('H:i:s'));
-                    }
-                    if ($value['type'] === 'string' && isset($row[$value['fieldName']])) {
-                        $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
-                    }
-                    if ($value['type'] === 'mediumtext' && isset($row[$value['fieldName']])) {
-                        $newArray[$key][$value['columnName']] = $this->dbStringOld($row[$value['fieldName']]);
-                    }
-                    if ($value['columnName'] === 'attachments') {
-                        $this->setAttachmentsStatus();
-                    }
+                    $newArray[$key][$value['columnName']] = $this->ReformatFieldEntityes($row,$value,$key);
                 }
 
                 /* забирать данные из связанных сущьностей */
@@ -3457,6 +3388,9 @@ abstract class ThaiInterface
                     if ($id <= 0) {
                         $r = $this->insertItemEntity($data);
                         if ($r[0] >= 1) {
+                            if(array_key_exists('__ArrayControllerUniqueItemID',$data)){
+                                $r['__ArrayControllerUniqueItemID'] = $data['__ArrayControllerUniqueItemID'];
+                            }
                             $m = ['success', 'Entry added'];
                         } else {
                             $m = ['error', 'Recording not possible'];
@@ -3561,18 +3495,51 @@ abstract class ThaiInterface
      */
     public function FieldType(array $field,array $data)
     {
-
         switch ($field['type']) {
             case 'double':
                 if(!empty($data[$field['columnName']])){
                     return (double)$this->getItemValue($data[$field['columnName']], $field['columnName'])[0];
                 }else{
+                    if($field["nullable"]){
+                        if(!empty($field["options"]) && !empty($field["options"])){
+                            foreach ($field["options"] as $optionKey=>$optionValue) {
+                                if($optionKey === 'default'){
+                                    return $optionValue;
+                                }
+                            }
+                        }
+                        return null;
+                    }
+                    if(!empty($field["options"]) && !empty($field["options"])){
+                        foreach ($field["options"] as $optionKey=>$optionValue) {
+                            if($optionKey === 'default'){
+                                return $optionValue;
+                            }
+                        }
+                    }
                     return 0;
                 }
             case 'decimal':
                 if(!empty($data[$field['columnName']])){
                     return (double)$this->getItemValue($data[$field['columnName']], $field['columnName'])[0];
                 }else{
+                    if($field["nullable"]){
+                        if(!empty($field["options"]) && !empty($field["options"])){
+                            foreach ($field["options"] as $optionKey=>$optionValue) {
+                                if($optionKey === 'default'){
+                                    return $optionValue;
+                                }
+                            }
+                        }
+                        return null;
+                    }
+                    if(!empty($field["options"]) && !empty($field["options"])){
+                        foreach ($field["options"] as $optionKey=>$optionValue) {
+                            if($optionKey === 'default'){
+                                return $optionValue;
+                            }
+                        }
+                    }
                     return 0;
                 }
             case 'tinyint':
@@ -3581,12 +3548,46 @@ abstract class ThaiInterface
                 if(!empty($data[$field['columnName']])){
                     return (int)$this->getItemValue($data[$field['columnName']], $field['columnName'])[0];
                 }else{
+                    if($field["nullable"]){
+                        if(!empty($field["options"]) && !empty($field["options"])){
+                            foreach ($field["options"] as $optionKey=>$optionValue) {
+                                if($optionKey === 'default'){
+                                    return $optionValue;
+                                }
+                            }
+                        }
+                        return null;
+                    }
+                    if(!empty($field["options"]) && !empty($field["options"])){
+                        foreach ($field["options"] as $optionKey=>$optionValue) {
+                            if($optionKey === 'default'){
+                                return $optionValue;
+                            }
+                        }
+                    }
                     return 0;
                 }
             case 'array':
                 if(!empty($data[$field['columnName']])){
                     return explode('|', $data[$field['columnName']]);
                 }else{
+                    if($field["nullable"]){
+                        if(!empty($field["options"]) && !empty($field["options"])){
+                            foreach ($field["options"] as $optionKey=>$optionValue) {
+                                if($optionKey === 'default'){
+                                    return $optionValue;
+                                }
+                            }
+                        }
+                        return null;
+                    }
+                    if(!empty($field["options"]) && !empty($field["options"])){
+                        foreach ($field["options"] as $optionKey=>$optionValue) {
+                            if($optionKey === 'default'){
+                                return $optionValue;
+                            }
+                        }
+                    }
                     return '';
                 }
             case 'text':
@@ -3596,6 +3597,23 @@ abstract class ThaiInterface
                 if(!empty($data[$field['columnName']])){
                     return $this->getItemValue($data[$field['columnName']], $field['columnName'])[0];
                 }else{
+                    if($field["nullable"]){
+                        if(!empty($field["options"]) && !empty($field["options"])){
+                            foreach ($field["options"] as $optionKey=>$optionValue) {
+                                if($optionKey === 'default'){
+                                    return $optionValue;
+                                }
+                            }
+                        }
+                        return null;
+                    }
+                    if(!empty($field["options"]) && !empty($field["options"])){
+                        foreach ($field["options"] as $optionKey=>$optionValue) {
+                            if($optionKey === 'default'){
+                                return $optionValue;
+                            }
+                        }
+                    }
                     return '';
                 }
             case 'time':
@@ -3604,6 +3622,23 @@ abstract class ThaiInterface
                 if(!empty($data[$field['columnName']])){
                     return new \DateTime($data[$field['columnName']]);
                 }else{
+                    if($field["nullable"]){
+                        if(!empty($field["options"]) && !empty($field["options"])){
+                            foreach ($field["options"] as $optionKey=>$optionValue) {
+                                if($optionKey === 'default'){
+                                    return $optionValue;
+                                }
+                            }
+                        }
+                        return null;
+                    }
+                    if(!empty($field["options"]) && !empty($field["options"])){
+                        foreach ($field["options"] as $optionKey=>$optionValue) {
+                            if($optionKey === 'default'){
+                                return $optionValue;
+                            }
+                        }
+                    }
                     return new \DateTime();
                 }
             default:
@@ -3666,10 +3701,11 @@ abstract class ThaiInterface
                                 if(!empty($data[$field['columnName']])){
                                     $Entity->{$method}( $this->attachmentsArrayToString($data[$field['columnName']]));
                                 }else{
-                                    $Entity->{$method}(0);
+                                    $Entity->{$method}('');
                                 }
                             }else{
                                 $Entity->{$method}($this->FieldType($field,$data));
+                               // $Entity->{$method}($data[$field['columnName']]);
                             }
                         }
                     }
@@ -3748,10 +3784,11 @@ abstract class ThaiInterface
                                         if(!empty($data[$field['columnName']])){
                                             $Entity->{$method}( $this->attachmentsArrayToString($data[$field['columnName']]));
                                         }else{
-                                            $Entity->{$method}(0);
+                                            $Entity->{$method}('');
                                         }
                                     }else{
                                         $Entity->{$method}($this->FieldType($field,$data));
+                                        //$Entity->{$method}($data[$field['columnName']]);
                                     }
                                 }
                             }
@@ -3809,10 +3846,11 @@ abstract class ThaiInterface
                                     if(!empty($data[$field['columnName']])){
                                         $Entity->{$method}( $this->attachmentsArrayToString($data[$field['columnName']]));
                                     }else{
-                                        $Entity->{$method}(0);
+                                        $Entity->{$method}('');
                                     }
                                 }else{
                                     $Entity->{$method}($this->FieldType($field,$data));
+                                    //$Entity->{$method}($data[$field['columnName']]);
                                 }
                             }
                         }
@@ -3953,6 +3991,7 @@ abstract class ThaiInterface
             return [0, 0];
         } else {
             if ($Permission === true) {
+
                 $Entity = $this->getConfig()->getEm()->getRepository($className)->find($id);
                 $class = $this->getConfig()->getEm()->getMetadataFactory()->getMetadataFor($className);
 
@@ -3986,9 +4025,7 @@ abstract class ThaiInterface
 
         $Entity = $this->getConfig()->getEm()->getRepository($className)->find($id);
 
-        if ( $this->getUserId() === $Entity->get_userid()) {
-
-
+        if ( (int)$this->getUserId() === (int)$Entity->get_userid()) {
             foreach ($entityManager->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings as $associationField) {
                 if($associationField['fieldName'] === $Related) {
                     $methodTargetAdd = 'add' . $associationField['fieldName'];
@@ -4192,10 +4229,12 @@ abstract class ThaiInterface
      */
     public function addArrayToEntity(array $elementArrey,string $related): array
     {
+
         $m = [];
         foreach ( $elementArrey as $value ) {
             $m[] = $this->addToEntity($value,$related);
         }
+
         return [
             'status' => 'info',
             'error' => 0,
