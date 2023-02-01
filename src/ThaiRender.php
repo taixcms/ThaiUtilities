@@ -315,9 +315,15 @@ msgstr ""
         $this::$Twig->addFunction(new  \Twig\TwigFunction('checkPermission', function ($conditionParams,$conditionName) {
             return (new ThaiGettingClass($this::$Config))->getClass($this::$ClassName)->checkPermission($conditionParams,$conditionName);
         }));
-        $this::$Twig->addFunction(new  \Twig\TwigFunction('actionClass', function ($className = '',$method = 'Action',$params = []) {
+        $this::$Twig->addFunction(new  \Twig\TwigFunction('actionClass', function ($className = '',$method = 'Action',$params = [], $returnDTO = true) {
            $ActionClass = (new ThaiGettingClass($this::$Config))->getClass( ($className !== ''?$className:$this::$Config->getPageName()));
-           return $ActionClass->{$method}($params)->getDTO();
+           if($returnDTO){
+               return $ActionClass->{$method}($params)->getDTO();
+           }else{
+               return $ActionClass->{$method}($params);
+           }
+
+
         }));
         return $this::$Twig;
     }
