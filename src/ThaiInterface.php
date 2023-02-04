@@ -2432,25 +2432,14 @@ abstract class ThaiInterface
      */
     public function ItemAndAssociationByUserID($id, string $key = NULL): ThaiInterface
     {
-
         $qb = $this->getConfig()->getEm()->createQueryBuilder();
         $qb->select( ['A'] )->from( $this->getEntityName(), 'A')->setParameter(':id', $id);
 
-        $isNotMapping = true;
         foreach ($this->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings as $associationField) {
-            $isNotMapping = false;
             $qb->addSelect( ['N'.$associationField['fieldName']] )->leftJoin('A.'.$associationField['fieldName'], 'N'.$associationField['fieldName']);
-            $qb->andWhere($qb->expr()->orX(
-                $qb->expr()->andX(
-                    $qb->expr()->in('A.userid', ':id'),
-                    $qb->expr()->isNotNull('N'.$associationField['fieldName'].'.id')
-                ),
-                $qb->expr()->isNull('N'.$associationField['fieldName'].'.id')
-            ));
         }
-        if($isNotMapping){
-            $qb->andWhere($qb->expr()->in('A.userid', ':id'));
-        }
+
+        $qb->andWhere($qb->expr()->in('A.userid', ':id'));
 
         foreach ($this->ReformatRowsAndAssociationEntityes( $qb->getQuery()->getArrayResult() ) as $one) {
             $this->setData($key ?: $this->getTableName(), $one);
