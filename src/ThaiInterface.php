@@ -1568,7 +1568,7 @@ abstract class ThaiInterface
         $arr = [];
         if ($rows) {
             foreach ($rows as $row) {
-                if(array_key_exists($this->getTableName(),$this->Skeleton) && count($this->Skeleton[$this->getTableName()])>=0){
+                if(!empty($this->Skeleton[$this->getTableName()])){
                     foreach ($this->Skeleton[$this->getTableName()] as $value) {
                         if ($value['fieldType'] === 'int' && isset($row[$value['fieldName']])) {
                             $row[$value['fieldName']] = (int)$row[$value['fieldName']];
