@@ -1568,55 +1568,55 @@ abstract class ThaiInterface
         $arr = [];
         if ($rows) {
             foreach ($rows as $row) {
+                if(array_key_exists($this->getTableName(),$this->Skeleton) && count($this->Skeleton[$this->getTableName()])>=0){
+                    foreach ($this->Skeleton[$this->getTableName()] as $value) {
+                        if ($value['fieldType'] === 'int' && isset($row[$value['fieldName']])) {
+                            $row[$value['fieldName']] = (int)$row[$value['fieldName']];
+                        }
+                        if ($value['fieldType'] === 'double' && isset($row[$value['fieldName']])) {
+                            $row[$value['fieldName']] = (double)$row[$value['fieldName']];
+                        }
+                        if ($value['fieldType'] === 'decimal' && isset($row[$value['fieldName']])) {
+                            $row[$value['fieldName']] = (double)$row[$value['fieldName']];
+                        }
+                        if ($value['fieldType'] === 'tinyint' && isset($row[$value['fieldName']])) {
+                            $row[$value['fieldName']] = (int)$row[$value['fieldName']];
+                        }
+                        if ($value['fieldType'] === 'array' && isset($row[$value['fieldName']])) {
+                            $row[$value['fieldName']] = explode('|', $row[$value['fieldName']]);
+                        }
+                        if ($value['fieldType'] === 'varchar' && isset($row[$value['fieldName']])) {
+                            $row[$value['fieldName']] = $this->dbStringOld($row[$value['fieldName']]);
+                        }
+                        if ($value['fieldType'] === 'text' && isset($row[$value['fieldName']])) {
+                            $row[$value['fieldName']] = $this->dbStringOld($row[$value['fieldName']]);
+                        }
+                        if ($value['fieldType'] === 'mediumtext' && isset($row[$value['fieldName']])) {
+                            $row[$value['fieldName']] = $this->dbStringOld($row[$value['fieldName']]);
+                        }
+                        if ($value['fieldName'] === 'attachments') {
+                            $this->setAttachmentsStatus();
+                        }
+                    }
+                    if (!empty($row['attachments'])) {
+                        $row['attachments'] = $this->getAttachments($row['attachments']);
+                    } else {
+                        $row['attachments'] = [];
+                    }
+                    $cFunc = $this->getCallBack();
+                    $itemValue = $cFunc($row);
 
-                foreach ($this->Skeleton[$this->getTableName()] as $value) {
-                    if ($value['fieldType'] === 'int' && isset($row[$value['fieldName']])) {
-                        $row[$value['fieldName']] = (int)$row[$value['fieldName']];
-                    }
-                    if ($value['fieldType'] === 'double' && isset($row[$value['fieldName']])) {
-                        $row[$value['fieldName']] = (double)$row[$value['fieldName']];
-                    }
-                    if ($value['fieldType'] === 'decimal' && isset($row[$value['fieldName']])) {
-                        $row[$value['fieldName']] = (double)$row[$value['fieldName']];
-                    }
-                    if ($value['fieldType'] === 'tinyint' && isset($row[$value['fieldName']])) {
-                        $row[$value['fieldName']] = (int)$row[$value['fieldName']];
-                    }
-                    if ($value['fieldType'] === 'array' && isset($row[$value['fieldName']])) {
-                        $row[$value['fieldName']] = explode('|', $row[$value['fieldName']]);
-                    }
-                    if ($value['fieldType'] === 'varchar' && isset($row[$value['fieldName']])) {
-                        $row[$value['fieldName']] = $this->dbStringOld($row[$value['fieldName']]);
-                    }
-                    if ($value['fieldType'] === 'text' && isset($row[$value['fieldName']])) {
-                        $row[$value['fieldName']] = $this->dbStringOld($row[$value['fieldName']]);
-                    }
-                    if ($value['fieldType'] === 'mediumtext' && isset($row[$value['fieldName']])) {
-                        $row[$value['fieldName']] = $this->dbStringOld($row[$value['fieldName']]);
-                    }
-                    if ($value['fieldName'] === 'attachments') {
-                        $this->setAttachmentsStatus();
+                    if ($itemValue) {
+                        if (!empty($itemValue['id'])) {
+                            $this->setIDs($itemValue['id']);
+                        }
+                        $Permission = $this->checkPermission($itemValue, 'viewItem');
+                        if ($Permission) {
+                            $this->setConditionToDataObject($itemValue);
+                            $arr[] = $itemValue;
+                        }
                     }
                 }
-                if (!empty($row['attachments'])) {
-                    $row['attachments'] = $this->getAttachments($row['attachments']);
-                } else {
-                    $row['attachments'] = [];
-                }
-                $cFunc = $this->getCallBack();
-                $itemValue = $cFunc($row);
-
-                if ($itemValue) {
-                    if (!empty($itemValue['id'])) {
-                        $this->setIDs($itemValue['id']);
-                    }
-                    $Permission = $this->checkPermission($itemValue, 'viewItem');
-                    if ($Permission) {
-                        $this->setConditionToDataObject($itemValue);
-                        $arr[] = $itemValue;
-                    }
-                }
-
             }
         }
         return $arr;
