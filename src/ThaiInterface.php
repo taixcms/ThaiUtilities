@@ -1132,11 +1132,20 @@ abstract class ThaiInterface
     }
 
     /**
+     * @param string|null $key
      * @return bool
      */
-    public function isSelect(): ?bool
+    public function isSelect(string $key = null): ?bool
     {
-        return (count($this->getDataObject()['Data'][$this->getTableName()]) >= 1);
+        if($key){
+            if($this->getDataObject()['Data'][$key] === null){
+                return false;
+            }else{
+                return (count($this->getDataObject()['Data'][$key]) >= 1);
+            }
+        }else{
+            return (count($this->getDataObject()['Data'][$this->getTableName()]) >= 1);
+        }
     }
 
     /**
