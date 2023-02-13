@@ -3724,7 +3724,6 @@ abstract class ThaiInterface
     public function saveEntity($Entity):ThaiInterface
     {
         $entityManager = $this->getEm();
-        $entityManager->persist($Entity);
         $entityManager->flush();
         $entityManager->clear();
         return $this;
