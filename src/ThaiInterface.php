@@ -3712,7 +3712,7 @@ abstract class ThaiInterface
                 }
             }
         }
-
+        $entityManager->persist($Entity);
         $this->saveEntity($Entity);
         return [
             $Entity->get_id(),
