@@ -2584,15 +2584,15 @@ abstract class ThaiInterface
      */
     public function query(string $sqlText = '', bool $cache = true)
     {
-        if (!empty($this->Connect->db_id)) {
-            if ($this->is_select($sqlText)) {
-                return $this->Connect->super_query($sqlText, $cache);
-            } else {
-                $Results = $this->Connect->query($sqlText, $cache);
-                $this->insert_id = $this->Connect->insert_id;
-                return $Results;
-            }
-        }
+//        if (!empty($this->Connect->db_id)) {
+//            if ($this->is_select($sqlText)) {
+//                return $this->Connect->super_query($sqlText, $cache);
+//            } else {
+//                $Results = $this->Connect->query($sqlText, $cache);
+//                $this->insert_id = $this->Connect->insert_id;
+//                return $Results;
+//            }
+//        }
         if ($sqlText === '') {
             return null;
         }
@@ -3386,6 +3386,8 @@ abstract class ThaiInterface
                     if ($id <= 0) {
                         $r = $this->insertItemEntity($data);
                         if ($r[0] >= 1) {
+                            $data['id'] = $r[0];
+                            $data = $this->callbackAfterSave($data);
                             if(array_key_exists('__ArrayControllerUniqueItemID',$data)){
                                 $r['__ArrayControllerUniqueItemID'] = $data['__ArrayControllerUniqueItemID'];
                             }
@@ -3946,9 +3948,18 @@ abstract class ThaiInterface
                     }
                 }
             }
+            try {
+                $entityManager->flush();
+                $entityManager->clear();
 
+                //$this->saveEntity($Entity);
+            } catch (Exception $e) {
+                ini_set('display_errors', 1);
+                ini_set('display_startup_errors', 1);
+                error_reporting(E_ALL);
+                echo 'Caught exception: ',  $e->getMessage(), "\n";
+            }
 
-            $this->saveEntity($Entity);
             if (  method_exists($Entity,'get_id')) {
                 $cache = $entityManager->getConfiguration()->getQueryCache();
                 $cache->delete($this->getEntityName().':'.$Entity->get_id());
