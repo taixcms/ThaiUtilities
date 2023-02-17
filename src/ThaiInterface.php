@@ -156,10 +156,17 @@ abstract class ThaiInterface
         return $this;
     }
 
+    /**
+     * @throws Exception
+     */
     public function getEntityName(): string
     {
         if (!class_exists('StructureProvider\\'.$this->entityName) && file_exists($this->getConfig()->getEntitiesDir()[0].'/StructureProvider/'.str_replace('\\','/',$this->entityName).'.php')) {
             include($this->getConfig()->getEntitiesDir()[0].'/StructureProvider/'.str_replace('\\','/',$this->entityName).'.php');
+        }else{
+            if(!class_exists('StructureProvider\\'.$this->entityName) && !file_exists($this->getConfig()->getEntitiesDir()[0].'/StructureProvider/'.str_replace('\\','/',$this->entityName).'.php')){
+                throw new Exception($this->translated(' entity not found:').$this->entityName.' -  '. get_class($this) .' file to path '. $this->getConfig()->getEntitiesDir()[0].'/StructureProvider/'.str_replace('\\','/',$this->entityName).'.php');
+            }
         }
         return 'StructureProvider\\'.$this->entityName;
     }
@@ -1074,7 +1081,7 @@ abstract class ThaiInterface
                             "default"   => $this->getDefaultValue($value['columnName'])
                         );
 
-                    }
+                        }
 
                     $this->setSkeleton($this->getTableName(), $arr);
                 }else{
