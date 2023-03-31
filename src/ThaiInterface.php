@@ -1052,6 +1052,9 @@ abstract class ThaiInterface
                     $class = $this->getConfig()->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName());
                     foreach ($class->fieldMappings as $value) {
 
+                        if($this->getDefaultFieldType($value['columnName'])){
+                            $value['type'] =  $this->getDefaultFieldType($value['columnName']);
+                        }
                         if ($this->getDefaultFieldType($value['columnName'])) {
                             $fieldType = $this->getDefaultFieldType($value['columnName']);
                         }else{
@@ -1361,7 +1364,15 @@ abstract class ThaiInterface
                 return (bool)$row[$fieldName];
             }
             if ($value['type'] === 'array') {
-                return explode('|', $row[$fieldName]);
+
+                if(gettype($row[$fieldName]) === 'string'){
+                    return explode('|', $row[$fieldName]);
+                }
+
+                if(gettype($row[$fieldName]) === 'array'){
+                    return implode('|', $row[$fieldName]);
+                }
+
             }
             if ($value['type'] === 'varchar') {
                 return ''.$row[$fieldName];
@@ -1442,6 +1453,9 @@ abstract class ThaiInterface
             foreach ($rows as $key=>$row) {
                 $newArray[$key] = [];
                 foreach ($class->fieldMappings as $value) {
+                    if($this->getDefaultFieldType($value['columnName'])){
+                        $value['type'] =  $this->getDefaultFieldType($value['columnName']);
+                    }
                     $newArray[$key][$value['columnName']] = $this->ReformatFieldEntityes($row,$value,$key);
                 }
 
@@ -1482,6 +1496,9 @@ abstract class ThaiInterface
             foreach ($rows as $key=>$row) {
                 $newArray[$key] = [];
                 foreach ($class->fieldMappings as $value) {
+                    if($this->getDefaultFieldType($value['columnName'])){
+                        $value['type'] =  $this->getDefaultFieldType($value['columnName']);
+                    }
                     $newArray[$key][$value['columnName']] = $this->ReformatFieldEntityes($row,$value,$key);
                 }
                     foreach ($class->associationMappings as $associationField) {
@@ -1533,6 +1550,9 @@ abstract class ThaiInterface
             foreach ($rows as $key=>$row) {
                 $newArray[$key] = [];
                 foreach ($class->fieldMappings as $value) {
+                    if($this->getDefaultFieldType($value['columnName'])){
+                        $value['type'] =  $this->getDefaultFieldType($value['columnName']);
+                    }
                     $newArray[$key][$value['columnName']] = $this->ReformatFieldEntityes($row,$value,$key);
                 }
 
@@ -3502,6 +3522,9 @@ abstract class ThaiInterface
      */
     public function FieldType(array $field,array $data)
     {
+        if($this->getDefaultFieldType($field['columnName'])){
+            $field['type'] =  $this->getDefaultFieldType($field['columnName']);
+        }
         switch ($field['type']) {
             case 'double':
                 if(!empty($data[$field['columnName']])){
@@ -3576,7 +3599,11 @@ abstract class ThaiInterface
                 }
             case 'array':
                 if(!empty($data[$field['columnName']])){
-                    return explode('|', $data[$field['columnName']]);
+                    if(gettype($data[$field['columnName']]) === 'array'){
+                        return implode('|', $data[$field['columnName']]);
+                    }else{
+                        return explode('|', $data[$field['columnName']]);
+                    }
                 }else{
                     if($field["nullable"]){
                         if(!empty($field["options"]) && !empty($field["options"])){
@@ -3703,6 +3730,9 @@ abstract class ThaiInterface
             if($method!=='setId'){
                 if (strpos($method, 'set') === 0 ) {
                     foreach ($entityManager->getMetadataFactory()->getMetadataFor($this->getEntityName())->fieldMappings as $field) {
+                        if($this->getDefaultFieldType($field['columnName'])){
+                            $field['type'] =  $this->getDefaultFieldType($field['columnName']);
+                        }
                         if ($field['fieldName']!=='id' && 'set_'.$field['columnName'] === $method) {
                             if($field['columnName'] ==='attachments'){
                                 if(!empty($data[$field['columnName']])){
@@ -3785,6 +3815,9 @@ abstract class ThaiInterface
                     if($method!=='setId'){
                         if (strpos($method, 'set') === 0) {
                             foreach ($class->fieldMappings as $field) {
+                                if($this->getDefaultFieldType($field['columnName'])){
+                                    $field['type'] =  $this->getDefaultFieldType($field['columnName']);
+                                }
                                 if ($field['fieldName']!=='id' && 'set_'.$field['columnName'] === $method) {
                                     if($field['columnName'] ==='attachments'){
                                         if(!empty($data[$field['columnName']])){
@@ -3847,6 +3880,9 @@ abstract class ThaiInterface
                 if($method!=='setId'){
                     if (strpos($method, 'set') === 0) {
                         foreach ($class->fieldMappings as $field) {
+                            if($this->getDefaultFieldType($field['columnName'])){
+                                $field['type'] =  $this->getDefaultFieldType($field['columnName']);
+                            }
                             if ($field['fieldName']!=='id' && 'set_'.$field['columnName'] === $method) {
                                 if($field['columnName'] ==='attachments'){
                                     if(!empty($data[$field['columnName']])){
