@@ -4504,7 +4504,7 @@ abstract class ThaiInterface
 
     /**
      * @param array $data
-     * @param int $data
+     * @param int $userid
      * @return array
      */
     public function callbackBeforeSaveLike(array $data,int $userid): ?array
