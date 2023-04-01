@@ -4504,9 +4504,10 @@ abstract class ThaiInterface
 
     /**
      * @param array $data
+     * @param int $data
      * @return array
      */
-    public function callbackBeforeSaveLike(array $data): ?array
+    public function callbackBeforeSaveLike(array $data,int $userid): ?array
     {
         return $data;
     }
@@ -4535,7 +4536,7 @@ abstract class ThaiInterface
 
             $sqlResult = $this->query("SELECT * FROM " . $this->getTableNameWhere() . " WHERE " . $this->getTableNameWhere() . "." . $this->getFieldsId() . " = '" . $id . "'");
             $uRow = $sqlResult[0];
-            $this->callbackBeforeSaveLike($uRow);
+            $this->callbackBeforeSaveLike($uRow,(int)$this->getUserId());
             $StatusSuccessRequest = 'info';
             $msgSuccessRequest = '';
             $uRow['likedata'] = explode(',', $uRow['likedata']);
