@@ -4501,6 +4501,17 @@ abstract class ThaiInterface
         ];
     }
 
+
+    /**
+     * @param array $data
+     * @return array
+     */
+    public function callbackBeforeSaveLike(array $data): ?array
+    {
+        return $data;
+    }
+
+
     /**
      * @return array
      * @throws Exception
@@ -4522,8 +4533,9 @@ abstract class ThaiInterface
 
         if ($this->Connect) {
 
-            $sqlResult = $this->query("SELECT likedata FROM " . $this->getTableNameWhere() . " WHERE " . $this->getTableNameWhere() . "." . $this->getFieldsId() . " = '" . $id . "'");
+            $sqlResult = $this->query("SELECT * FROM " . $this->getTableNameWhere() . " WHERE " . $this->getTableNameWhere() . "." . $this->getFieldsId() . " = '" . $id . "'");
             $uRow = $sqlResult[0];
+            $this->callbackBeforeSaveLike($uRow);
             $StatusSuccessRequest = 'info';
             $msgSuccessRequest = '';
             $uRow['likedata'] = explode(',', $uRow['likedata']);
