@@ -79,6 +79,7 @@ abstract class ThaiInterface
     public $Filter;
     public $fieldsId;
     public $isLogged;
+    public $Redis;
     public $isAdmin = false;
     private static $Config;
 
@@ -182,6 +183,8 @@ abstract class ThaiInterface
      */
     public function __construct($Db = NULL, $className = NULL)
     {
+        $this->Redis = new \Redis();
+        $this->Redis->connect('localhost', 6379);
         if (get_class($Db) != 'mysqli' && get_class($Db) != 'db') {
 
             if (!empty($Db->db_id)) {
@@ -967,6 +970,10 @@ abstract class ThaiInterface
      */
     public function getSkeleton(): ThaiInterface
     {
+
+
+
+
         if ($this->Connect && empty($this->Skeleton[$this->getTableName()])) {
             $this->init();
             $this->setCheckSum($this->getTableNameWhere());
@@ -1025,7 +1032,15 @@ abstract class ThaiInterface
                     $arr[] = $uRow;
                 }
                 if($this->getEntityName() !== 'StructureProvider\\'){
-                    foreach ($this->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings as $associationField) {
+
+                    $structure = $this->Redis->get('association-mappings-'.$this->getEntityName());
+                        if($structure !== false){
+                            $associationMappings = json_decode($structure, JSON_HEX_QUOT);
+                        }else{
+                            $associationMappings = $this->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings;
+                            $this->Redis->set('association-mappings-'.$this->getEntityName(), json_encode($associationMappings, JSON_HEX_QUOT));
+                        }
+                    foreach ($associationMappings as $associationField) {
                         $arr[] = array(
                             "fieldName" => $associationField["fieldName"],
                             "fieldType" => "array",
@@ -1034,13 +1049,18 @@ abstract class ThaiInterface
                         );
                     }
                 }
-
                 $this->setSkeleton($this->getTableName(), $arr);
             } else {
 
                 if($this->getEntityName() !== 'StructureProvider\\'){
-
-                    foreach ($this->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings as $associationField) {
+                    $structure = $this->Redis->get('association-mappings-'.$this->getEntityName());
+                    if($structure !== false){
+                        $associationMappings = json_decode($structure, JSON_HEX_QUOT);
+                    }else{
+                        $associationMappings = $this->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings;
+                        $this->Redis->set('association-mappings-'.$this->getEntityName(), json_encode($associationMappings, JSON_HEX_QUOT));
+                    }
+                    foreach ($associationMappings as $associationField) {
                         $arr[] = array(
                             "fieldName" => $associationField["fieldName"],
                             "fieldType" => "array",
@@ -1049,8 +1069,15 @@ abstract class ThaiInterface
                         );
                     }
 
-                    $class = $this->getConfig()->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName());
-                    foreach ($class->fieldMappings as $value) {
+                    $structure = $this->Redis->get('field-mappings-'.$this->getEntityName());
+                    if($structure !== false){
+                        $fieldMappings = json_decode($structure, JSON_HEX_QUOT);
+                    }else{
+                        $fieldMappings = $this->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName())->fieldMappings;
+                        $this->Redis->set('field-mappings-'.$this->getEntityName(), json_encode($fieldMappings, JSON_HEX_QUOT));
+                    }
+
+                    foreach ($fieldMappings as $value) {
 
                         if($this->getDefaultFieldType($value['columnName'])){
                             $value['type'] =  $this->getDefaultFieldType($value['columnName']);
@@ -1446,13 +1473,21 @@ abstract class ThaiInterface
         if($entityName === null){
             $entityName = $this->getEntityName();
         }
-        $class = $this->getConfig()->getEm()->getMetadataFactory()->getMetadataFor($entityName);
+
+        $structure = $this->Redis->get('field-mappings-'.$entityName);
+        if($structure !== false){
+            $fieldMappings = json_decode($structure, JSON_HEX_QUOT);
+        }else{
+            $fieldMappings = $this->getEm()->getMetadataFactory()->getMetadataFor($entityName)->fieldMappings;
+            $this->Redis->set('field-mappings-'.$this->getEntityName(), json_encode($fieldMappings, JSON_HEX_QUOT));
+        }
+
         $arr = [];
         if ($rows) {
             $newArray = [];
             foreach ($rows as $key=>$row) {
                 $newArray[$key] = [];
-                foreach ($class->fieldMappings as $value) {
+                foreach ($fieldMappings as $value) {
                     if($this->getDefaultFieldType($value['columnName'])){
                         $value['type'] =  $this->getDefaultFieldType($value['columnName']);
                     }
@@ -1489,19 +1524,34 @@ abstract class ThaiInterface
      */
     public function ReformatRowsAndAssociationEntityes(array $rows = null): ?array
     {
-        $class = $this->getConfig()->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName());
+        $structure = $this->Redis->get('field-mappings-'.$this->getEntityName());
+        if($structure !== false){
+            $fieldMappings = json_decode($structure, JSON_HEX_QUOT);
+        }else{
+            $fieldMappings = $this->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName())->fieldMappings;
+            $this->Redis->set('field-mappings-'.$this->getEntityName(), json_encode($fieldMappings, JSON_HEX_QUOT));
+        }
+
+        $structure = $this->Redis->get('association-mappings-'.$this->getEntityName());
+        if($structure !== false){
+            $associationMappings = json_decode($structure, JSON_HEX_QUOT);
+        }else{
+            $associationMappings = $this->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings;
+            $this->Redis->set('association-mappings-'.$this->getEntityName(), json_encode($associationMappings, JSON_HEX_QUOT));
+        }
+
         $arr = [];
         if ($rows) {
             $newArray = [];
             foreach ($rows as $key=>$row) {
                 $newArray[$key] = [];
-                foreach ($class->fieldMappings as $value) {
+                foreach ($fieldMappings as $value) {
                     if($this->getDefaultFieldType($value['columnName'])){
                         $value['type'] =  $this->getDefaultFieldType($value['columnName']);
                     }
                     $newArray[$key][$value['columnName']] = $this->ReformatFieldEntityes($row,$value,$key);
                 }
-                    foreach ($class->associationMappings as $associationField) {
+                    foreach ($associationMappings as $associationField) {
                         if (!empty($rows[$key][$associationField['fieldName']])) {
                             if(!empty($rows[$key][$associationField['fieldName']]) && count($rows[$key][$associationField['fieldName']])>=1){
                                     $newArray[$key][$associationField['fieldName']]=$rows[$key][$associationField['fieldName']];
@@ -1543,13 +1593,30 @@ abstract class ThaiInterface
      */
     public function ReformatRowsAndManyAssociationEntityes(array $rows = null, $targetEntity): ?array
     {
-        $class = $this->getConfig()->getEm()->getMetadataFactory()->getMetadataFor($targetEntity);
+
+
+        $structure = $this->Redis->get('field-mappings-'.$targetEntity);
+        if($structure !== false){
+            $fieldMappings = json_decode($structure, JSON_HEX_QUOT);
+        }else{
+            $fieldMappings = $this->getEm()->getMetadataFactory()->getMetadataFor($targetEntity)->fieldMappings;
+            $this->Redis->set('field-mappings-'.$this->getEntityName(), json_encode($fieldMappings, JSON_HEX_QUOT));
+        }
+
+        $structure = $this->Redis->get('association-mappings-'.$targetEntity);
+        if($structure !== false){
+            $associationMappings = json_decode($structure, JSON_HEX_QUOT);
+        }else{
+            $associationMappings = $this->getEm()->getMetadataFactory()->getMetadataFor($targetEntity)->associationMappings;
+            $this->Redis->set('association-mappings-'.$this->getEntityName(), json_encode($associationMappings, JSON_HEX_QUOT));
+        }
+
         $arr = [];
         if ($rows) {
             $newArray = [];
             foreach ($rows as $key=>$row) {
                 $newArray[$key] = [];
-                foreach ($class->fieldMappings as $value) {
+                foreach ($fieldMappings as $value) {
                     if($this->getDefaultFieldType($value['columnName'])){
                         $value['type'] =  $this->getDefaultFieldType($value['columnName']);
                     }
@@ -1557,7 +1624,7 @@ abstract class ThaiInterface
                 }
 
                 /* забирать данные из связанных сущьностей */
-                foreach ($class->associationMappings as $associationField) {
+                foreach ($associationMappings as $associationField) {
                     if (!empty($rows[$key][$associationField['fieldName']])) {
                         if(!empty($rows[$key][$associationField['fieldName']]) && count($rows[$key][$associationField['fieldName']])>=1){
                             $newArray[$key][$associationField['fieldName']]=$rows[$key][$associationField['fieldName']];
@@ -2471,7 +2538,16 @@ abstract class ThaiInterface
         $qb = $this->getConfig()->getEm()->createQueryBuilder();
         $qb->select( ['A'] )->from( $this->getEntityName(), 'A')->setParameter(':id', $id);
 
-        foreach ($this->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings as $associationField) {
+
+        $structure = $this->Redis->get('association-mappings-'.$this->getEntityName());
+        if($structure !== false){
+            $associationMappings = json_decode($structure, JSON_HEX_QUOT);
+        }else{
+            $associationMappings = $this->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings;
+            $this->Redis->set('association-mappings-'.$this->getEntityName(), json_encode($associationMappings, JSON_HEX_QUOT));
+        }
+
+        foreach ($associationMappings as $associationField) {
             $qb->addSelect( ['N'.$associationField['fieldName']] )->leftJoin('A.'.$associationField['fieldName'], 'N'.$associationField['fieldName']);
         }
 
@@ -2497,7 +2573,16 @@ abstract class ThaiInterface
         $qb = $this->getConfig()->getEm()->createQueryBuilder();
         $qb->select( ['A'] )->from( $this->getEntityName(), 'A')->setParameter(':id', $id);
 
-        foreach ($this->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings as $associationField) {
+        $structure = $this->Redis->get('association-mappings-'.$this->getEntityName());
+        if($structure !== false){
+            $associationMappings = json_decode($structure, JSON_HEX_QUOT);
+        }else{
+            $associationMappings = $this->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings;
+            $this->Redis->set('association-mappings-'.$this->getEntityName(), json_encode($associationMappings, JSON_HEX_QUOT));
+        }
+
+
+        foreach ($associationMappings as $associationField) {
             $qb->addSelect( ['N'.$associationField['fieldName']] )->leftJoin('A.'.$associationField['fieldName'], 'N'.$associationField['fieldName']);
         }
 
@@ -2523,7 +2608,15 @@ abstract class ThaiInterface
         $qb = $this->getConfig()->getEm()->createQueryBuilder();
         $qb->select( ['A'] )->from( $this->getEntityName(), 'A')->setParameter(':id', $id);
 
-        foreach ($this->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings as $associationField) {
+        $structure = $this->Redis->get('association-mappings-'.$this->getEntityName());
+        if($structure !== false){
+            $associationMappings = json_decode($structure, JSON_HEX_QUOT);
+        }else{
+            $associationMappings = $this->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings;
+            $this->Redis->set('association-mappings-'.$this->getEntityName(), json_encode($associationMappings, JSON_HEX_QUOT));
+        }
+
+        foreach ($associationMappings as $associationField) {
             $qb->addSelect( ['N'.$associationField['fieldName']] )->leftJoin('A.'.$associationField['fieldName'], 'N'.$associationField['fieldName']);
         }
 
@@ -3729,7 +3822,14 @@ abstract class ThaiInterface
         foreach (get_class_methods($Entity) as $method) {
             if($method!=='setId'){
                 if (strpos($method, 'set') === 0 ) {
-                    foreach ($entityManager->getMetadataFactory()->getMetadataFor($this->getEntityName())->fieldMappings as $field) {
+                    $structure = $this->Redis->get('field-mappings-'.$this->getEntityName());
+                    if($structure !== false){
+                        $fieldMappings = json_decode($structure, JSON_HEX_QUOT);
+                    }else{
+                        $fieldMappings = $this->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName())->fieldMappings;
+                        $this->Redis->set('field-mappings-'.$this->getEntityName(), json_encode($fieldMappings, JSON_HEX_QUOT));
+                    }
+                    foreach ($fieldMappings as $field) {
                         if($this->getDefaultFieldType($field['columnName'])){
                             $field['type'] =  $this->getDefaultFieldType($field['columnName']);
                         }
@@ -3790,31 +3890,19 @@ abstract class ThaiInterface
         } else {
             if ($Permission === true) {
                 $Entity = $this->getConfig()->getEm()->getRepository($className)->find($id);
-                $class = $this->getConfig()->getEm()->getMetadataFactory()->getMetadataFor($className);
 
-//                foreach ($entityManager->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings as $associationField) {
-//                    $methodTargetClear = 'clear' . $associationField['fieldName'];
-//                    if(method_exists($Entity,$methodTargetClear)){
-//                        $Entity->{$methodTargetClear}();
-//                    }
-//                    $methodTargetAdd = 'add' . $associationField['fieldName'];
-//                    if (method_exists($Entity,$methodTargetAdd)) {
-//                        $targetEntityName = $entityManager->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings[$associationField['fieldName']]["targetEntity"];
-//                        if(!empty($data[$associationField['fieldName']])){
-//                            foreach ($data[$associationField['fieldName']] as $newData) {
-//                                if((int)$newData['id']>=1){
-//                                    $EntityTarget = $this->getConfig()->getEm()->getRepository($targetEntityName)->find($newData['id']);
-//                                    $Entity->{$methodTargetAdd}($EntityTarget);
-//                                }
-//                            }
-//                        }
-//                    }
-//                }
+                $structure = $this->Redis->get('field-mappings-'.$className);
+                if($structure !== false){
+                    $fieldMappings = json_decode($structure, JSON_HEX_QUOT);
+                }else{
+                    $fieldMappings = $this->getEm()->getMetadataFactory()->getMetadataFor($className)->fieldMappings;
+                    $this->Redis->set('field-mappings-'.$this->getEntityName(), json_encode($fieldMappings, JSON_HEX_QUOT));
+                }
 
                 foreach (get_class_methods($Entity) as $method) {
                     if($method!=='setId'){
                         if (strpos($method, 'set') === 0) {
-                            foreach ($class->fieldMappings as $field) {
+                            foreach ($fieldMappings as $field) {
                                 if($this->getDefaultFieldType($field['columnName'])){
                                     $field['type'] =  $this->getDefaultFieldType($field['columnName']);
                                 }
@@ -3855,31 +3943,19 @@ abstract class ThaiInterface
         if ( $this->getUserId() === $Entity->get_userid()) {
 
 
-//            foreach ($entityManager->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings as $associationField) {
-//                $methodTargetClear = 'clear' . $associationField['fieldName'];
-//                if(method_exists($Entity,$methodTargetClear)){
-//                    $Entity->{$methodTargetClear}();
-//                }
-//                $methodTargetAdd = 'add' . $associationField['fieldName'];
-//                if (method_exists($Entity,$methodTargetAdd)) {
-//                    $targetEntityName = $entityManager->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings[$associationField['fieldName']]["targetEntity"];
-//                    if(!empty($data[$associationField['fieldName']])){
-//                        foreach ($data[$associationField['fieldName']] as $newData) {
-//                            if((int)$newData['id']>=1){
-//                                $EntityTarget = $this->getConfig()->getEm()->getRepository($targetEntityName)->find($newData['id']);
-//                                $Entity->{$methodTargetAdd}($EntityTarget);
-//                            }
-//                        }
-//                    }
-//                }
-//            }
 
 
-            $class = $this->getConfig()->getEm()->getMetadataFactory()->getMetadataFor($className);
+            $structure = $this->Redis->get('field-mappings-'.$className);
+            if($structure !== false){
+                $fieldMappings = json_decode($structure, JSON_HEX_QUOT);
+            }else{
+                $fieldMappings = $this->getEm()->getMetadataFactory()->getMetadataFor($className)->fieldMappings;
+                $this->Redis->set('field-mappings-'.$this->getEntityName(), json_encode($fieldMappings, JSON_HEX_QUOT));
+            }
             foreach (get_class_methods($Entity) as $method) {
                 if($method!=='setId'){
                     if (strpos($method, 'set') === 0) {
-                        foreach ($class->fieldMappings as $field) {
+                        foreach ($fieldMappings as $field) {
                             if($this->getDefaultFieldType($field['columnName'])){
                                 $field['type'] =  $this->getDefaultFieldType($field['columnName']);
                             }
@@ -3943,13 +4019,19 @@ abstract class ThaiInterface
         } else {
             if ($Permission === true) {
                 $Entity = $this->getConfig()->getEm()->getRepository($className)->find($id);
-                $class = $this->getConfig()->getEm()->getMetadataFactory()->getMetadataFor($className);
+                $structure = $this->Redis->get('association-mappings-'.$this->getEntityName());
+                if($structure !== false){
+                    $associationMappings = json_decode($structure, JSON_HEX_QUOT);
+                }else{
+                    $associationMappings = $this->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings;
+                    $this->Redis->set('association-mappings-'.$this->getEntityName(), json_encode($associationMappings, JSON_HEX_QUOT));
+                }
 
-                foreach ($entityManager->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings as $associationField) {
+                foreach ($associationMappings as $associationField) {
                     if($associationField['fieldName'] === $Related) {
                         $methodTargetRemoveOne = 'removeOne' . $associationField['fieldName'];
                         if (method_exists($Entity, $methodTargetRemoveOne)) {
-                            $targetEntityName = $entityManager->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings[$associationField['fieldName']]["targetEntity"];
+                            $targetEntityName = $associationMappings[$associationField['fieldName']]["targetEntity"];
                             if ((int)$element['id'] >= 1) {
                                 $EntityTarget = $this->getConfig()->getEm()->getRepository($targetEntityName)->find($element['id']);
                                 $Entity->{$methodTargetRemoveOne}($EntityTarget);
@@ -3977,12 +4059,19 @@ abstract class ThaiInterface
 
         if ( $this->getUserId() === $Entity->get_userid()) {
 
+            $structure = $this->Redis->get('association-mappings-'.$this->getEntityName());
+            if($structure !== false){
+                $associationMappings = json_decode($structure, JSON_HEX_QUOT);
+            }else{
+                $associationMappings = $this->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings;
+                $this->Redis->set('association-mappings-'.$this->getEntityName(), json_encode($associationMappings, JSON_HEX_QUOT));
+            }
 
-            foreach ($entityManager->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings as $associationField) {
+            foreach ($associationMappings as $associationField) {
                 if($associationField['fieldName'] === $Related) {
                     $methodTargetRemoveOne = 'removeOne' . $associationField['fieldName'];
                     if (method_exists($Entity, $methodTargetRemoveOne)) {
-                        $targetEntityName = $entityManager->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings[$associationField['fieldName']]["targetEntity"];
+                        $targetEntityName = $associationMappings[$associationField['fieldName']]["targetEntity"];
                         if ((int)$element['id'] >= 1) {
                             $EntityTarget = $this->getConfig()->getEm()->getRepository($targetEntityName)->find($element['id']);
                             $Entity->{$methodTargetRemoveOne}($EntityTarget);
@@ -4044,13 +4133,22 @@ abstract class ThaiInterface
             if ($Permission === true) {
 
                 $Entity = $this->getConfig()->getEm()->getRepository($className)->find($id);
-                $class = $this->getConfig()->getEm()->getMetadataFactory()->getMetadataFor($className);
 
-                foreach ($entityManager->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings as $associationField) {
+
+                $structure = $this->Redis->get('association-mappings-'.$this->getEntityName());
+                if($structure !== false){
+                    $associationMappings = json_decode($structure, JSON_HEX_QUOT);
+                }else{
+                    $associationMappings = $this->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings;
+                    $this->Redis->set('association-mappings-'.$this->getEntityName(), json_encode($associationMappings, JSON_HEX_QUOT));
+                }
+
+
+                foreach ($associationMappings as $associationField) {
                     if($associationField['fieldName'] === $Related) {
                         $methodTargetAdd = 'add' . $associationField['fieldName'];
                         if (method_exists($Entity, $methodTargetAdd)) {
-                            $targetEntityName = $entityManager->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings[$associationField['fieldName']]["targetEntity"];
+                            $targetEntityName = $associationMappings[$associationField['fieldName']]["targetEntity"];
                             if ((int)$element['id'] >= 1) {
                                 $EntityTarget = $this->getConfig()->getEm()->getRepository($targetEntityName)->find($element['id']);
                                 $Entity->{$methodTargetAdd}($EntityTarget);
@@ -4077,11 +4175,21 @@ abstract class ThaiInterface
         $Entity = $this->getConfig()->getEm()->getRepository($className)->find($id);
 
         if ( (int)$this->getUserId() === (int)$Entity->get_userid()) {
-            foreach ($entityManager->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings as $associationField) {
+
+            $structure = $this->Redis->get('association-mappings-'.$this->getEntityName());
+            if($structure !== false){
+                $associationMappings = json_decode($structure, JSON_HEX_QUOT);
+            }else{
+                $associationMappings = $this->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings;
+                $this->Redis->set('association-mappings-'.$this->getEntityName(), json_encode($associationMappings, JSON_HEX_QUOT));
+            }
+
+
+            foreach ($associationMappings as $associationField) {
                 if($associationField['fieldName'] === $Related) {
                     $methodTargetAdd = 'add' . $associationField['fieldName'];
                     if (method_exists($Entity, $methodTargetAdd)) {
-                        $targetEntityName = $entityManager->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings[$associationField['fieldName']]["targetEntity"];
+                        $targetEntityName = $associationMappings[$associationField['fieldName']]["targetEntity"];
                         if ((int)$element['id'] >= 1) {
                             $EntityTarget = $this->getConfig()->getEm()->getRepository($targetEntityName)->find($element['id']);
                             $Entity->{$methodTargetAdd}($EntityTarget);
