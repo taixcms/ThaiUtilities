@@ -7,6 +7,7 @@ use \Exception;
 use Doctrine\Laminas\Hydrator\DoctrineObject;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
+use Doctrine\ORM\Query;
 use Doctrine\ORM\Query\Expr;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Component\Console\Application;
@@ -2552,8 +2553,7 @@ abstract class ThaiInterface
         }
 
         $qb->andWhere($qb->expr()->in('A.userid', ':id'));
-
-        foreach ($this->ReformatRowsAndAssociationEntityes( $qb->getQuery()->getArrayResult() ) as $one) {
+        foreach ($this->ReformatRowsAndAssociationEntityes( $qb->getQuery()->setMaxResults(1)->getArrayResult() ) as $one) {
             $this->setData($key ?: $this->getTableName(), $one);
             return $this;
         }
@@ -2588,7 +2588,7 @@ abstract class ThaiInterface
 
         $qb->andWhere($qb->expr()->in('A.id', ':id'));
 
-        foreach ($this->ReformatRowsAndManyAssociationEntityes( $qb->getQuery()->getArrayResult() ,$this->getEntityName()) as $one) {
+        foreach ($this->ReformatRowsAndManyAssociationEntityes( $qb->getQuery()->setMaxResults(1)->getArrayResult() ,$this->getEntityName()) as $one) {
             $this->setData($key ?: $this->getTableName(), $one);
             return $this;
         }
@@ -2622,7 +2622,7 @@ abstract class ThaiInterface
 
         $qb->andWhere($qb->expr()->in('A.id', ':id'));
 
-        foreach ($this->ReformatRowsAndAssociationEntityes( $qb->getQuery()->getArrayResult() ) as $one) {
+        foreach ($this->ReformatRowsAndAssociationEntityes( $qb->getQuery()->setMaxResults(1)->getArrayResult() ) as $one) {
             $this->setData($key ?: $this->getTableName(), $one);
             return $this;
         }
@@ -2657,7 +2657,7 @@ abstract class ThaiInterface
         //if($isNotMapping){
         $qb->andWhere($qb->expr()->in('A.id', ':id'));
         // }
-        foreach ($this->ReformatRowsEntityes( $qb->getQuery()->getArrayResult() ) as $one) {
+        foreach ($this->ReformatRowsEntityes( $qb->getQuery()->setMaxResults(1)->getArrayResult() ) as $one) {
             $this->setData($key ?: $this->getTableName(), $one);
             return $this;
         }
@@ -2831,7 +2831,7 @@ abstract class ThaiInterface
         $qb->andWhere($qb->expr()->in('A.userid', ':userid'));
         //}
 
-        foreach ($this->ReformatRowsEntityes( $qb->getQuery()->getArrayResult() ) as $one) {
+        foreach ($this->ReformatRowsEntityes( $qb->getQuery()->setMaxResults(1)->getArrayResult() ) as $one) {
             $this->setData($key ?: $this->getTableName(), $one);
             return $this;
         }
