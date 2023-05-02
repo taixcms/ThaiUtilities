@@ -3841,12 +3841,7 @@ abstract class ThaiInterface
                                     $Entity->{$method}('');
                                 }
                             }else{
-                                $v = $this->FieldType($field,$data);
-                                if(gettype($v) === 'array' && $field['type'] ==='array'){
-                                    $Entity->{$method}($v[0]);
-                                }else{
-                                    $Entity->{$method}($v);
-                                }
+                                $Entity->{$method}($this->FieldType($field,$data));
                                // $Entity->{$method}($data[$field['columnName']]);
                             }
                         }
