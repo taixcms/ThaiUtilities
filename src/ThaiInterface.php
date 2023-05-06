@@ -3852,7 +3852,7 @@ abstract class ThaiInterface
         $entityManager->persist($Entity);
         $this->saveEntity($Entity);
         return [
-            $Entity->get_id(),
+            (method_exists($Entity,'get_id'))?$Entity->get_id():null,
             $this->insertItemHistory($data)
         ];
     }
