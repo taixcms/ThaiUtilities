@@ -2638,27 +2638,30 @@ abstract class ThaiInterface
      */
     public function ItemByID($id, string $key = NULL): ThaiInterface
     {
-
         $qb = $this->getConfig()->getEm()->createQueryBuilder();
         $qb->select( ['A'] )->from( $this->getEntityName(), 'A')->setParameter(':id', $id);
-
-//        $isNotMapping = true;
-//        foreach ($this->getEm()->getMetadataFactory()->getMetadataFor($this->getEntityName())->associationMappings as $associationField) {
-//            $isNotMapping = false;
-//            $qb->addSelect( ['N'.$associationField['fieldName']] )->leftJoin('A.'.$associationField['fieldName'], 'N'.$associationField['fieldName']);
-//            $qb->andWhere($qb->expr()->orX(
-//                $qb->expr()->andX(
-//                    $qb->expr()->in('A.id', ':id'),
-//                    $qb->expr()->isNotNull('N'.$associationField['fieldName'].'.id')
-//                ),
-//                $qb->expr()->isNull('N'.$associationField['fieldName'].'.id')
-//            ));
-//        }
-        //if($isNotMapping){
         $qb->andWhere($qb->expr()->in('A.id', ':id'));
-        // }
         foreach ($this->ReformatRowsEntityes( $qb->getQuery()->getArrayResult() ) as $one) {
             $this->setData($key ?: $this->getTableName(), $one);
+            return $this;
+        }
+        $this->setData($key ?: $this->getTableName(), null);
+        return $this;
+    }
+
+    /**
+     * @param int|string $id
+     * @param string|null $key
+     * @return $this
+     * @throws Exception
+     */
+    public function ItemsByID($id, string $key = NULL): ThaiInterface
+    {
+        $qb = $this->getConfig()->getEm()->createQueryBuilder();
+        $qb->select( ['A'] )->from( $this->getEntityName(), 'A')->setParameter(':id', $id);
+        $qb->andWhere($qb->expr()->in('A.id', ':id'));
+        foreach ($this->ReformatRowsEntityes( $qb->getQuery()->getArrayResult() ) as $one) {
+            $this->setData($key ?: $this->getTableName(), [$one]);
             return $this;
         }
         $this->setData($key ?: $this->getTableName(), null);
