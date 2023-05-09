@@ -2926,7 +2926,7 @@ abstract class ThaiInterface
 //                $this->Connect->close();
 //            }
             $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https" : "http";
-            header('Location: ' . $protocol . '://' . $this->AuthHost . '/auth?returl=' . $this->PageSimpleURL);
+            header('Location: ' . $protocol . '://' . $this->AuthHost . '/auth?returl='  .  $protocol . '://' .$this->AuthHost . $this->PageSimpleURL);
             exit;
         }
         return $this;
