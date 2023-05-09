@@ -45,6 +45,11 @@ class ThaiGettingClass
 
     public function getClass($className)
     {
+        $lng = array('af','de','en','es','fr','it','pl','pt','hr','fi','tr','ru','uk','hy','he','ar','hi','th','zh','ja');
+        if (in_array($className, $lng)) {
+            $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https" : "http";
+            header('Location: ' . $protocol . '://' . $_SERVER['HTTP_HOST']);
+        }
         $config = $this::$Config;
         $ActionClass = new $className($this::$Config->getDb());
 
