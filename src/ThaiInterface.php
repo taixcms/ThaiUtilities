@@ -564,22 +564,20 @@ abstract class ThaiInterface
     }
 
 
-    /**
-     * @return int
-     */
-    public function getRouteParam(): ?int
+
+    public function getRouteParam()
     {
         $ID = null;
         if (!empty($_REQUEST['routestring'])) {
             $routeString = explode('/', $_REQUEST['routestring']);
             if (count($routeString) >= 3) {
-                $ID = (int)explode('/', $_REQUEST['routestring'])[2];
+                $ID = explode('/', $_REQUEST['routestring'])[2];
             }
         }
         if (!empty($_REQUEST['route'])) {
             $routeString = explode('/', $_REQUEST['route']);
             if (count($routeString) >= 2) {
-                $ID = (int)explode('/', $_REQUEST['route'])[1];
+                $ID = explode('/', $_REQUEST['route'])[1];
             }
         }
         return $ID;
@@ -4988,6 +4986,16 @@ abstract class ThaiInterface
         } else {
             return 'userid';
         }
+    }
+
+    /**
+     * @param string $TableName
+     * @return $this
+     */
+    public function setTableName(string $TableName): ThaiInterface
+    {
+        $this->TableName = $TableName;
+        return $this;
     }
 
     /**
