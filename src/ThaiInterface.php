@@ -3335,6 +3335,7 @@ abstract class ThaiInterface
      */
     public function Remove(string $Id): array
     {
+        $Id = (int)$Id;
         if ($this->Connect) {
             $sqlResult = $this->query("SELECT * FROM " . $this->getTableNameWhere() . " WHERE " . $this->getTableNameWhere() . "." . $this->getFieldsWhere() . " = '" . $this->getUserId() . "' AND " . $this->getTableNameWhere() . "." . $this->getFieldsId() . " = '" . $Id . "'");
             $sqlResultPerm = $this->query("SELECT * FROM " . $this->getTableNameWhere() . " WHERE  " . $this->getTableNameWhere() . "." . $this->getFieldsId() . " = '" . $Id . "'");
@@ -3342,13 +3343,13 @@ abstract class ThaiInterface
                 $Permission = $this->checkPermission($sqlResultPerm[0], 'remove');
                 if ($Permission === true) {
                     if ($this->getAttachmentsStatus()) {
-                        $this->AttachmentsRemove((int)$Id);
+                        $this->AttachmentsRemove($Id);
                     }
                     $this->query("DELETE FROM " . $this->getTableNameWhere() . " WHERE " . $this->getTableNameWhere() . ".id = '" . $Id . "'");
                     return [
                         'status' => 'warning',
                         'error' => 0,
-                        'id' => (int)$Id,
+                        'id' => $Id,
                         'condition' => $this->Condition,
                         'msg' => $this->translated('Burn deleted'),
                     ];
@@ -3357,7 +3358,7 @@ abstract class ThaiInterface
                     return [
                         'status' => 'error',
                         'error' => 0,
-                        'id' => (int)$Id,
+                        'id' => $Id,
                         'condition' => $this->Condition,
                         'msg' => $this->translated('Access denied'),
                     ];
@@ -3365,7 +3366,7 @@ abstract class ThaiInterface
             }
             if (!empty($sqlResult)) {
                 if ($this->getAttachmentsStatus()) {
-                    $this->AttachmentsRemove((int)$Id);
+                    $this->AttachmentsRemove($Id);
                 }
 
                 $r1 = $this->callbackBeforeRemove($sqlResult[0]);
@@ -3375,7 +3376,7 @@ abstract class ThaiInterface
                 return [
                     'status' => 'error',
                     'error' => 0,
-                    'id' => (int)$Id,
+                    'id' => $Id,
                     'condition' => $this->Condition,
                     'msg' => $this->translated('Access denied'),
                 ];
@@ -3384,7 +3385,7 @@ abstract class ThaiInterface
         return [
             'status' => 'warning',
             'error' => 0,
-            'id' => (int)$Id,
+            'id' => $Id,
             'condition' => $this->Condition,
             'msg' => $this->translated('Burn deleted'),
         ];
@@ -3997,7 +3998,7 @@ abstract class ThaiInterface
     /**
      * @param array $data
      * @param array $element
-     * @param string $$Related
+     * @param string $Related
      * @return array
      * @throws Exception
      */
@@ -4035,7 +4036,7 @@ abstract class ThaiInterface
                         $methodTargetRemoveOne = 'removeOne' . $associationField['fieldName'];
                         if (method_exists($Entity, $methodTargetRemoveOne)) {
                             $targetEntityName = $associationMappings[$associationField['fieldName']]["targetEntity"];
-                            if ((int)$element['id'] >= 1) {
+                            if ($element['id'] >= 1) {
                                 $EntityTarget = $this->getConfig()->getEm()->getRepository($targetEntityName)->find($element['id']);
                                 $Entity->{$methodTargetRemoveOne}($EntityTarget);
                             }
@@ -4222,47 +4223,7 @@ abstract class ThaiInterface
      */
     public function insertItem(array $data): ?array
     {
-
-        $arrValueList = [];
-        $arrFieldList = [];
-
-        foreach ($this->Skeleton[$this->getTableName()] as $value) {
-            if ($value['fieldName'] != 'attachments') {
-                if ($value['fieldName'] != $this->getFieldsId()) {
-                    if (!empty($data[$value['fieldName']])) {
-                        $res = $this->getItemValue($data[$value['fieldName']], $value['fieldName']);
-                        if ($res !== false) {
-                            $arrValueList[] = $res[0];
-                            $arrFieldList[] = $res[1];
-                        }
-                    } else {
-                        $arrValueList[] = '';
-                        $arrFieldList[] = $value['fieldName'];
-                    }
-                }
-            } else {
-                if (!empty($data[$value['fieldName']])) {
-                    $arrFieldList[] = $value['fieldName'];
-                    $arrValueList[] = $this->attachmentsArrayToString($data[$value['fieldName']]);
-                }
-            }
-        }
-        $Permission = $this->checkPermission($data, 'creat');
-        if ($Permission === false) {
-            $this->setData('error', array_merge($this->getData('error'), [[
-                'method' => 'insertItem',
-                'data' => [],
-                'TableName' => $this->getTableName(),
-                'key' => '',
-                'msg' => $this->translated('Access denied'),
-            ]]));
-            return [0, 0];
-        }
-        $this->query("INSERT INTO " . $this->getTableNameWhere() . "(" . implode(",", $arrFieldList) . ") VALUES ('" . implode("','", $arrValueList) . "')");
-        return [
-            $this->insert_id,
-            $this->insertItemHistory($data)
-        ];
+      return NULL;
     }
 
     /**
@@ -4272,74 +4233,6 @@ abstract class ThaiInterface
      */
     public function updateItem(array $data): ?array
     {
-
-        $tableSetArr = [];
-        $id = (int)$data['id'];
-        $cacheItem = [];
-        foreach ($this->Skeleton[$this->getTableName()]  as $key => $value) {
-            if ($value['fieldName'] != 'attachments') {
-                if ($value['fieldName'] != $this->getFieldsId()) {
-                    if (!empty($data[$value['fieldName']])) {
-                        $res = $this->getItemValue($data[$value['fieldName']], $value['fieldName']);
-                        if ($res !== false) {
-                            $tableSetArr[] = "" . $res[1] . "='" . $res[0] . "'";
-                            $cacheItem[$res[1]]=$res[0];
-                        }
-                    } else {
-                        $cacheItem[$value['fieldName']]='';
-                        $tableSetArr[] = "" . $value['fieldName'] . "=''";
-                    }
-                }else{
-                    $cacheItem[$value['fieldName']]=$id;
-                }
-            } else {
-                if ($this->getAttachmentsStatus() && empty($data['attachments'])) {
-                    $this->AttachmentsRemove($id);
-                    $cacheItem['attachments']='';
-                    $tableSetArr[] = "attachments=''";
-                } else {
-                    if (!empty($data[$value['fieldName']])) {
-                        $cacheItem[$value['fieldName']]=$this->attachmentsArrayToString($data[$value['fieldName']]);
-                        $tableSetArr[] = "" . $value['fieldName'] . "='" . $this->attachmentsArrayToString($data[$value['fieldName']]) . "'";
-                    }
-                }
-            }
-        }
-
-        $Permission = $this->checkPermission($data, 'update');
-        if ($Permission === false) {
-            $this->setData('error', array_merge($this->getData('error'), [[
-                'method' => 'insertItem',
-                'data' => [],
-                'TableName' => $this->getTableName(),
-                'key' => '',
-                'msg' => $this->translated('Access denied'),
-            ]]));
-            return [0, 0];
-        } else {
-            if ($Permission === true) {
-                $this->query("UPDATE " . $this->getTableNameWhere() . " SET " . implode(",", $tableSetArr) . " WHERE " . $this->getTableNameWhere() . "." . $this->getFieldsId() . " = '" . $id . "'");
-                $CacheAdapter = $this->getConfig()->getCacheAdapterRedis();
-                $CacheAdapter->delete('item-by-id-'.$this->getTableNameWhere().'-'.$id);
-                $CacheAdapter->delete('item-by-user-id-'.$this->getTableName().'-'.$data['userid']);
-                return [
-                    $id,
-                    $this->insertItemHistory($data)
-                ];
-            }
-        }
-
-        $this->lastID = $id;
-        if (!empty($this->query("SELECT * FROM " . $this->getTableNameWhere() . " WHERE " . $this->getTableNameWhere() . "." . $this->getFieldsWhere() . " = '" . $this->getUserId() . "' AND " . $this->getTableNameWhere() . "." . $this->getFieldsId() . " = '" . $id . "'"))) {
-            $this->query("UPDATE " . $this->getTableNameWhere() . " SET " . implode(",", $tableSetArr) . " WHERE " . $this->getTableNameWhere() . "." . $this->getFieldsWhere() . " = '" . $this->getUserId() . "' AND " . $this->getTableNameWhere() . "." . $this->getFieldsId() . " = '" . $id . "'");
-            $CacheAdapter = $this->getConfig()->getCacheAdapterRedis();
-            $CacheAdapter->delete('item-by-id-'.$this->getTableNameWhere().'-'.$id);
-            $CacheAdapter->delete('item-by-user-id-'.$this->getTableName().'-'.$data['userid']);
-            return [
-                $id,
-                $this->insertItemHistory($data)
-            ];
-        }
         return NULL;
     }
 
@@ -4514,9 +4407,9 @@ abstract class ThaiInterface
     public function deny(): array
     {
         $StatusSuccessRequest = 'success';
-        $id = $this->getRequest()['id'];
+        $id = (int)$this->getRequest()['id'];
         if ($this->Connect) {
-            if ((int)$id <= 0) {
+            if ($id <= 0) {
                 $StatusSuccessRequest = 'error';
                 $msgSuccessRequest = ' $id <= 0';
             } else {
@@ -4524,7 +4417,7 @@ abstract class ThaiInterface
                 $sqlText = "UPDATE " . $this->getTableNameWhere() . " SET status='" . $this->getRequest()['status'] . "',comment='" . $this->getRequest()['comment'] . "' WHERE  " . $this->getTableNameWhere() . ".id = '" . $id . "'";
 
                 $this->Connect->query($sqlText);
-                $this->lastID = (int)$id;
+                $this->lastID = $id;
                 $msgSuccessRequest = 'Saved successfully';
             }
         } else {
@@ -4555,7 +4448,7 @@ abstract class ThaiInterface
         foreach ($this->Skeleton[$this->getTableName()] as $value) {
             if ($value['fieldName'] != 'attachments') {
                 if ($value['fieldName'] === $this->getFieldsId()) {
-                    $id = $this->getRequest()[$value['fieldName']];
+                    $id = (int)$this->getRequest()[$value['fieldName']];
                 }
             }
         }
@@ -4597,7 +4490,7 @@ abstract class ThaiInterface
             $tableSet = "likedata='" . $tableSet . "'";
             $sqlText = "UPDATE " . $this->getTableNameWhere() . " SET " . $tableSet . " WHERE " . $this->getTableNameWhere() . "." . $this->getFieldsId() . " = '" . $id . "'";
             $this->Connect->query($sqlText);
-            $this->lastID = (int)$id;
+            $this->lastID = $id;
         } else {
             $msgSuccessRequest = 'Database connection error';
         }
@@ -4638,7 +4531,7 @@ abstract class ThaiInterface
         foreach ($this->Skeleton[$this->getTableName()] as $value) {
             if ($value['fieldName'] != 'attachments') {
                 if ($value['fieldName'] === $this->getFieldsId()) {
-                    $id = $this->getRequest()[$value['fieldName']];
+                    $id = (int)$this->getRequest()[$value['fieldName']];
                 }
             }
         }
