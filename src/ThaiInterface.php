@@ -3267,6 +3267,27 @@ abstract class ThaiInterface
                     }
                 }
             } else {
+                if(gettype($this->Request[$this->getTableName()]) === 'array'){
+                    foreach ($this->Request[$this->getTableName()] as $key=>$value) {
+                        if(gettype($value)==='string'){
+                            $this->Request[$this->getTableName()][$key] = str_replace("'", "\'", $value);
+                        }
+                        if(gettype($value)==='array'){
+                            foreach ($value as $k=>$v) {
+                                if(gettype($v)==='string'){
+                                    $this->Request[$this->getTableName()][$key][$k] = str_replace("'", "\'", $v);
+                                }
+                                if(gettype($v)==='array'){
+                                    foreach ($v as $k1=>$v1) {
+                                        if(gettype($v1)==='string'){
+                                            $this->Request[$this->getTableName()][$key][$k][$k1] = str_replace("'", "\'", $v1);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
                 return $this->Request[$this->getTableName()];
             }
         }
