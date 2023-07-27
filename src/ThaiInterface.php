@@ -20,7 +20,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Helper\HelperSet;
 use StructureProvider;
-
+use Doctrine\DBAL\Logging\DebugStack;
 
 /**
  * Class ThaiInterface
@@ -3872,6 +3872,10 @@ abstract class ThaiInterface
                 }
             }
         }
+
+
+
+
         $entityManager->persist($Entity);
         $this->saveEntity($Entity);
         return [
@@ -3883,8 +3887,35 @@ abstract class ThaiInterface
 
     public function saveEntity($Entity):ThaiInterface
     {
+//        ini_set('error_reporting', E_ALL);
+//        ini_set('display_errors', 1);
+//        ini_set('display_startup_errors', 1);
         $entityManager = $this->getEm();
+//        $logger = new DebugStack();
+//        $entityManager->getConnection()
+//            ->getConfiguration()
+//            ->setSQLLogger($logger);
+
+
         $entityManager->flush();
+
+//var_dump($logger->currentQuery);
+//        $current = $logger->queries[1];
+//        var_dump($current['params']);
+//        var_dump($current['sql']);
+//
+//
+//
+//        $current = $logger->queries[2];
+//        var_dump($current['params']);
+//        var_dump($current['sql']);
+//
+//
+//        $current = $logger->queries[3];
+//        var_dump($current['params']);
+//        var_dump($current['sql']);
+
+
         $entityManager->clear();
         return $this;
     }
