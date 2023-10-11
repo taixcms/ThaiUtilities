@@ -4505,8 +4505,9 @@ abstract class ThaiInterface
 
         if ($this->Connect) {
 
-            $sqlResult = $this->query("SELECT likedata FROM " . $this->getTableNameWhere() . " WHERE " . $this->getTableNameWhere() . "." . $this->getFieldsId() . " = '" . $id . "'");
+            $sqlResult = $this->query("SELECT * FROM " . $this->getTableNameWhere() . " WHERE " . $this->getTableNameWhere() . "." . $this->getFieldsId() . " = '" . $id . "'");
             $uRow = $sqlResult[0];
+            $this->callbackBeforeSaveDisLike($uRow,(int)$this->getUserId());
             $StatusSuccessRequest = 'info';
             $msgSuccessRequest = '';
             $uRow['likedata'] = explode(',', $uRow['likedata']);
@@ -4566,7 +4567,15 @@ abstract class ThaiInterface
         return $data;
     }
 
-
+    /**
+     * @param array $data
+     * @param int $userid
+     * @return array
+     */
+    public function callbackBeforeSaveDisLike(array $data,int $userid): ?array
+    {
+        return $data;
+    }
     /**
      * @return array
      * @throws Exception
@@ -4590,10 +4599,10 @@ abstract class ThaiInterface
 
             $sqlResult = $this->query("SELECT * FROM " . $this->getTableNameWhere() . " WHERE " . $this->getTableNameWhere() . "." . $this->getFieldsId() . " = '" . $id . "'");
             $uRow = $sqlResult[0];
-            $this->callbackBeforeSaveLike($uRow,(int)$this->getUserId());
             $StatusSuccessRequest = 'info';
             $msgSuccessRequest = '';
             $uRow['likedata'] = explode(',', $uRow['likedata']);
+            $this->callbackBeforeSaveLike($uRow,(int)$this->getUserId());
             $key = array_search($this->getUserId() . '', $uRow['likedata']);
 
             if ($key === false) {
