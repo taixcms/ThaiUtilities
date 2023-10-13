@@ -4507,10 +4507,10 @@ abstract class ThaiInterface
 
             $sqlResult = $this->query("SELECT * FROM " . $this->getTableNameWhere() . " WHERE " . $this->getTableNameWhere() . "." . $this->getFieldsId() . " = '" . $id . "'");
             $uRow = $sqlResult[0];
-            $this->callbackBeforeSaveDisLike($uRow,(int)$this->getUserId());
             $StatusSuccessRequest = 'info';
             $msgSuccessRequest = '';
             $uRow['likedata'] = explode(',', $uRow['likedata']);
+            $this->callbackBeforeSaveDisLike($uRow,(int)$this->getUserId());
             $key = array_search('-' . $this->getUserId(), $uRow['likedata']);
 
             if ($key === false) {
