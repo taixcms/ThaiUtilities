@@ -81,6 +81,7 @@ abstract class ThaiInterface
     public $fieldsId;
     public $isLogged;
     public $Redis;
+    public $Device = false;
     public $isAdmin = false;
     private static $Config;
 
@@ -110,6 +111,25 @@ abstract class ThaiInterface
         self::$Config = $Config;
         $this->setNameDataBase($Config->getDbName());
         return $this;
+    }
+
+    public function setDevice( $Device): ThaiInterface
+    {
+        if($Device){
+            if ($this->Connect) {
+                $arr =  $this->query("SELECT * FROM user_devices where uid = '" . $Device . "'"  );
+                if (count($arr) >= 1) {
+                    $this->setUserid($arr[0]['userid']);
+                }
+            }
+            $this->Device = $Device;
+        }
+        return $this;
+    }
+
+    public function getDevice()
+    {
+        return $this->Device;
     }
 
     /**
